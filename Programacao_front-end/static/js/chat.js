@@ -54,16 +54,19 @@ class ChatManager {
 
     addMessage(role, text) {
         const messageElement = document.createElement('article');
-        messageElement.className = `message ${role}`;
+        messageElement.className = `message ${role} d-flex align-items-end gap-2`;
+        if (role === 'user') {
+            messageElement.classList.add('flex-row-reverse', 'align-self-end');
+        }
 
         const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
+        avatar.className = 'message-avatar d-flex align-items-center justify-content-center flex-shrink-0';
         avatar.innerHTML = role === 'assistant'
             ? '<i class="fa-solid fa-robot"></i>'
             : '<i class="fa-solid fa-user"></i>';
 
         const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
+        bubble.className = 'message-bubble flex-grow-1';
 
         if (role === 'assistant') {
             bubble.innerHTML = marked.parse(text);

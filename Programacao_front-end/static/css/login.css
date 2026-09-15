@@ -1,122 +1,74 @@
 body {
     font-family: 'Cormorant Garamond', serif;
     background: linear-gradient(120deg, #0F4662 0%, #68B0AB 100%);
-    min-height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
-.login-container, .register-container, .reset-container {
-    background: rgba(255,255,255,0.98);
-    padding: 38px 28px 28px 28px;
-    border-radius: 18px;
+.auth-card {
+    --bs-card-bg: rgba(255, 255, 255, 0.98);
+    --bs-card-border-radius: 18px;
+    padding: 38px 28px 28px;
     box-shadow: 0 8px 32px #0f466238;
-    width: 335px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    position: absolute;
-    top: 50%; 
-    left: 50%;
-    transform: translate(-50%,-50%);
-    z-index: 10;
+    width: min(391px, 100%);
 }
 
 .logo {
     width: 120px;
     margin-bottom: 10px;
-    display: block;
 }
 
 .app-title {
     color: #0F4662;
-    font-weight: 700;
     font-size: 1.55rem;
-    margin: 0 0 4px 0;
-    text-align: center;
+    margin-bottom: 4px;
     letter-spacing: 1px;
 }
 
 .subtitle {
     color: #68B0AB;
     font-size: 1.08rem;
-    margin-bottom: 8px;
-    text-align: center;
-    font-weight: 500;
 }
 
-input, button {
-    width: 100%;
+.form-control {
     padding: 13px 10px;
     border-radius: 9px;
-    border: 1px solid #C1C1C1;
-    font-size: 1rem;
+    border-color: #C1C1C1;
     margin-top: 6px;
-    font-family: inherit;
 }
 
-button {
-    background: #0F4662;
-    color: white;
-    font-weight: bold;
-    border: none;
+.btn-primary {
+    --bs-btn-bg: #0F4662;
+    --bs-btn-hover-bg: #093246;
+    --bs-btn-active-bg: #093246;
+    --bs-btn-border-color: transparent;
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-active-border-color: transparent;
+    --bs-btn-border-radius: 9px;
+    --bs-btn-padding-y: 13px;
+    --bs-btn-padding-x: 10px;
+    --bs-btn-font-size: 1.08rem;
     margin-top: 10px;
-    transition: background 0.2s;
-    cursor: pointer;
-    font-size: 1.08rem;
     letter-spacing: 1px;
     box-shadow: 0 2px 12px #68b0ab33;
 }
 
-button:hover {
-    background: #093246;
+.btn-link,
+.close-x {
+    --bs-btn-color: #0F4662;
+    --bs-btn-hover-color: #093246;
+    --bs-btn-active-color: #093246;
 }
 
-.link-btn {
-    background: none !important;
-    color: #0F4662 !important;
-    border: none !important;
-    margin-top: 4px !important;
-    font-weight: 600 !important;
-    font-size: 1.01rem !important;
-    cursor: pointer;
-    text-decoration: underline;
-    padding: 0 !important;
-    box-shadow: none !important;
+.btn-link {
+    --bs-btn-font-size: 1.01rem;
 }
 
 .erro {
     color: #e60000;
-    margin: 0;
-    font-size: 1rem;
-    text-align: center;
     min-height: 24px;
 }
 
 .close-x {
-    position: absolute;
+    --bs-btn-font-size: 1.5rem;
     top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 1.5rem;
-    color: #0F4662;
-    font-weight: bold;
-    background: none !important;
-    border: none !important;
-    cursor: pointer;
-    z-index: 20;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: auto !important;
-}
-
-@media (max-width: 400px) {
-    .login-container, .register-container, .reset-container { 
-        width: 98vw; 
-        padding: 24px 5vw; 
-    }
+    line-height: 1;
 }

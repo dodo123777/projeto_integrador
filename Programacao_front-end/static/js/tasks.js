@@ -123,16 +123,17 @@ class TaskManager {
 
         tasks.forEach((task) => {
             const li = document.createElement('li');
+            li.className = 'task-item d-flex flex-column flex-sm-row flex-lg-column flex-xl-row align-items-sm-center align-items-lg-stretch align-items-xl-center gap-2 p-3';
 
             li.innerHTML = `
-                <div class="task-details">
-                    <span>${task.text}</span>
-                    <span class="time">Horário: ${task.time}</span>
-                    <span class="time">Concluir até: ${task.deadline}</span>
+                <div class="task-details d-flex flex-column flex-grow-1 gap-1">
+                    <span class="fw-bold">${task.text}</span>
+                    <span class="time fw-semibold">Horário: ${task.time}</span>
+                    <span class="time fw-semibold">Concluir até: ${task.deadline}</span>
                 </div>
-                <div class="task-actions">
-                    <button class="delete-btn">Remover</button>
-                    <button class="check-btn">${task.completed ? 'Desfazer' : 'Concluir'}</button>
+                <div class="task-actions d-flex flex-wrap justify-content-end gap-2">
+                    <button class="btn delete-btn fw-bold">Remover</button>
+                    <button class="btn check-btn fw-bold">${task.completed ? 'Desfazer' : 'Concluir'}</button>
                 </div>
             `;
 

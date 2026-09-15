@@ -43,7 +43,7 @@ class LoginManager {
 
         // Enter para fazer login
         document.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" && this.loginForm.style.display !== "none") {
+            if (e.key === "Enter" && !this.loginForm.classList.contains('d-none')) {
                 this.fazerLogin();
             }
         });
@@ -58,27 +58,27 @@ class LoginManager {
 
     // Navegação entre formulários
     abrirRegistro() {
-        this.registerForm.style.display = 'flex';
-        this.loginForm.style.display = 'none';
+        this.registerForm.classList.remove('d-none');
+        this.loginForm.classList.add('d-none');
         this.limparErros();
     }
 
     fecharRegistro() {
-        this.registerForm.style.display = 'none';
-        this.loginForm.style.display = 'flex';
+        this.registerForm.classList.add('d-none');
+        this.loginForm.classList.remove('d-none');
         this.limparErros();
         this.limparCamposRegistro();
     }
 
     abrirReset() {
-        this.resetForm.style.display = 'flex';
-        this.loginForm.style.display = 'none';
+        this.resetForm.classList.remove('d-none');
+        this.loginForm.classList.add('d-none');
         this.limparErros();
     }
 
     fecharReset() {
-        this.resetForm.style.display = 'none';
-        this.loginForm.style.display = 'flex';
+        this.resetForm.classList.add('d-none');
+        this.loginForm.classList.remove('d-none');
         this.limparErros();
         this.limparCamposReset();
     }
