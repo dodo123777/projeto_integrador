@@ -1,0 +1,79 @@
+[hidden] { display: none !important; }
+.professional-app { display: grid; grid-template-columns: 246px minmax(0, 1fr); min-height: 100dvh; }
+.professional-sidebar { padding: 32px 20px; background: #fff; border-right: 1px solid #dbe6ef; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100dvh; }
+.brand { color: #0f4662; font-weight: 800; font-size: 1.6rem; text-decoration: none; display: flex; gap: 12px; align-items: center; }
+.brand i { color: #0f8b8d; }
+.sidebar-heading, .eyebrow { font-size: .72rem; letter-spacing: .08em; color: #5c7083; font-weight: 700; }
+.sidebar-heading { margin-bottom: -14px; }
+.professional-sidebar nav { display: flex; flex-direction: column; gap: 8px; }
+.professional-sidebar nav a { display: flex; align-items: center; gap: 12px; padding: 13px 12px; border-radius: 8px; color: #4a6072; text-decoration: none; font-weight: 600; font-size: .94rem; }
+.professional-sidebar nav a i { width: 20px; text-align: center; }
+.professional-sidebar nav a:hover { background: #f4f7fb; }
+.professional-sidebar nav a[aria-current="page"] { color: #0f4662; background: #e8f8f6; box-shadow: inset 3px 0 #0f8b8d; }
+.sidebar-footer { margin-top: auto; }
+.sidebar-footer p { font-size: .82rem; line-height: 1.8; }
+.professional-main { width: 100%; max-width: 1500px; padding: 40px clamp(16px, 4vw, 56px); min-width: 0; }
+.professional-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.professional-header h1 { font-size: clamp(1.5rem, 2.3vw, 2rem); color: #10344a; font-weight: 700; overflow-wrap: anywhere; }
+.professional-header .subtitle { margin: 8px 0 0; }
+.professional-header > .btn { flex-shrink: 0; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+.professional-main .metric-card { padding: 20px; min-height: 138px; justify-content: space-between; }
+.professional-main .metric-card span { text-transform: none; font-weight: 500; font-size: .9rem; }
+.professional-main .metric-card strong { font-size: 2rem; }
+.panel { padding: 24px; }
+.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.panel-heading h2 { margin: 0; }
+.table-wrap { overflow-x: auto; }
+.professional-table { width: 100%; border-collapse: collapse; font-size: .91rem; }
+.professional-table th { color: #5c7083; font-size: .78rem; font-weight: 600; background: #f9fbfd; }
+.professional-table th, .professional-table td { padding: 16px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+.professional-table td { color: #10344a; }
+.professional-table td:first-child { min-width: 140px; }
+.professional-table .btn { --bs-btn-padding-y: 7px; --bs-btn-padding-x: 10px; font-size: .83rem; }
+.status-badge { display: inline-block; padding: 5px 9px; border-radius: 6px; background: #edf3ff; color: #0f4662; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.status-finalizada, .status-confirmada { background: #e8f8f6; color: #176557; }
+.status-em_atendimento { background: #fff4db; color: #785700; }
+.status-cancelada { background: #fff0f3; color: #9a2036; }
+.empty-state { padding: 40px 16px; text-align: center; color: #5c7083; }
+.empty-state i { display: block; color: #0f8b8d; font-size: 1.6rem; margin-bottom: 16px; }
+.filter-bar { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 20px; }
+.filter-bar label { display: block; margin-bottom: 6px; }
+.filter-bar input { max-width: 360px; }
+.appointment-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.appointment-form .wide { grid-column: 1 / -1; }
+.appointment-form label { display: block; margin-bottom: 6px; }
+.appointment-form input, .appointment-form select { width: 100%; }
+.appointment-form .btn { justify-self: start; }
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin: 0; }
+.profile-grid dt { color: #5c7083; font-size: .85rem; font-weight: 500; margin-bottom: 6px; }
+.profile-grid dd { color: #10344a; font-weight: 600; overflow-wrap: anywhere; margin: 0; }
+.privacy-note { color: #5c7083; font-size: .8rem; margin-top: 26px; }
+#feedback:empty { display: none; }
+#feedback { padding: 12px 16px; border-radius: 8px; background: #edf3ff; color: #0f4662; }
+#feedback.error { background: #fff0f3; color: #9a2036; }
+.access-state { max-width: 560px; margin: 15vh auto; width: calc(100% - 32px); }
+dialog { width: min(860px, calc(100% - 32px)); max-height: 85dvh; padding: 24px; border: 1px solid #dbe6ef; border-radius: 12px; color: #10344a; }
+dialog::backdrop { background: #10344a80; }
+.mobile-menu { display: none; }
+.skip-link { position: fixed; left: 12px; top: -100px; z-index: 10; background: white; padding: 12px; }
+.skip-link:focus { top: 12px; }
+a:focus-visible, select:focus-visible { outline: 3px solid #74c0c8; outline-offset: 2px; }
+@media (max-width: 1100px) { .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+    .professional-app { grid-template-columns: minmax(0, 1fr); }
+    .professional-sidebar { position: static; height: auto; padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 12px; border-right: 0; border-bottom: 1px solid #dbe6ef; }
+    .sidebar-heading, .sidebar-footer p { display: none; }
+    .mobile-menu { display: block; }
+    .professional-sidebar nav, .sidebar-footer { display: none; grid-column: 1 / -1; }
+    .professional-sidebar.menu-open nav { display: flex; }
+    .professional-sidebar.menu-open .sidebar-footer { display: block; }
+    .professional-main { padding: 24px 16px; }
+    .professional-header { align-items: start; flex-wrap: wrap; }
+    .panel { padding: 16px; }
+    .appointment-form, .profile-grid { grid-template-columns: 1fr; }
+    .metric-grid { gap: 10px; }
+    .professional-main .metric-card { padding: 16px; }
+    .panel-heading { align-items: start; flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

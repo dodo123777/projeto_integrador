@@ -33,7 +33,6 @@ class LoginManager {
         // Botões principais
         document.getElementById('loginBtn').addEventListener('click', () => this.fazerLogin());
         document.getElementById('registerBtn').addEventListener('click', () => this.fazerRegistro());
-        document.getElementById('resetBtn').addEventListener('click', () => this.fazerReset());
 
         // Botões de navegação
         document.getElementById('openRegisterBtn').addEventListener('click', () => this.abrirRegistro());
@@ -49,11 +48,27 @@ class LoginManager {
         });
     }
 
-    checkAlreadyLoggedIn() {
+    async checkAlreadyLoggedIn() {
         const token = localStorage.getItem('token');
         if (token) {
-            window.location.href = 'index.html';
+            try {
+                window.location.href = await this.destination(token);
+            } catch (error) {
+                localStorage.removeItem('token');
+                this.erroLogin.textContent = error.message;
+            }
         }
+    }
+
+    async destination(token) {
+        const response = await fetch(`${this.baseURL}/sessao`, {
+            headers: { Authorization: token }, cache: 'no-store'
+        });
+        if (response.status === 401) throw new Error('Sua sessão expirou. Entre novamente.');
+        if (!response.ok) throw new Error('Não foi possível verificar sua conta.');
+        const data = await response.json();
+        const allowed = ['index.html', 'profissional.html', 'admin.html'];
+        return allowed.includes(data.destino) ? data.destino : 'index.html';
     }
 
     // Navegação entre formulários
@@ -80,7 +95,6 @@ class LoginManager {
         this.resetForm.classList.add('d-none');
         this.loginForm.classList.remove('d-none');
         this.limparErros();
-        this.limparCamposReset();
     }
 
     limparErros() {
@@ -95,10 +109,6 @@ class LoginManager {
         document.getElementById('regSenha').value = '';
     }
 
-    limparCamposReset() {
-        document.getElementById('resetEmail').value = '';
-        document.getElementById('resetSenha').value = '';
-    }
 
     // Validações
     validarEmail(email) {
@@ -141,7 +151,9 @@ class LoginManager {
                     ? data.token
                     : `Bearer ${data.token}`;
                 localStorage.setItem('token', bearerToken);
-                window.location.href = "index.html";
+                const allowed = ['index.html', 'profissional.html', 'admin.html'];
+                window.location.href = allowed.includes(data.destino)
+                    ? data.destino : await this.destination(bearerToken);
             } else {
                 this.erroLogin.innerText = data.erro || 'Erro no login';
             }
@@ -196,48 +208,7 @@ class LoginManager {
         }
     }
 
-    async fazerReset() {
-        const email = document.getElementById('resetEmail').value.trim();
-        const nova_senha = document.getElementById('resetSenha').value;
 
-        // Validações
-        if (!email || !nova_senha) {
-            this.erroReset.innerText = "Preencha todos os campos!";
-            return;
-        }
-
-        if (!this.validarEmail(email)) {
-            this.erroReset.innerText = "Email inválido!";
-            return;
-        }
-
-        if (!this.validarSenha(nova_senha)) {
-            this.erroReset.innerText = "A senha deve ter pelo menos 6 caracteres!";
-            return;
-        }
-
-        try {
-            const response = await fetch(`${this.baseURL}/esqueci_senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, nova_senha })
-            });
-
-            const data = await response.json();
-
-            if (data.msg) {
-                alert(data.msg + " Agora faça login.");
-                this.fecharReset();
-                // Preencher email no login
-                document.getElementById('loginEmail').value = email;
-            } else {
-                this.erroReset.innerText = data.erro || 'Erro ao redefinir';
-            }
-        } catch (error) {
-            console.error('Erro ao redefinir senha:', error);
-            this.erroReset.innerText = 'Erro ao conectar ao servidor!';
-        }
-    }
 }
 
 // Inicializar quando a página carregar

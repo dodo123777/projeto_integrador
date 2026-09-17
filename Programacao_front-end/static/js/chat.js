@@ -68,8 +68,8 @@ class ChatManager {
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble flex-grow-1';
 
-        if (role === 'assistant') {
-            bubble.innerHTML = marked.parse(text);
+        if (role === 'assistant' && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+            bubble.innerHTML = DOMPurify.sanitize(marked.parse(text), { USE_PROFILES: { html: true } });
         } else {
             bubble.textContent = text;
         }
