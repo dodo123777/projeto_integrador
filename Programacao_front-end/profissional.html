@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Área do Profissional — InfoHelp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="./static/css/style.css">
+    <link rel="stylesheet" href="./static/css/profissional.css">
+    <script src="./static/js/profissional.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#content">Pular para o conteúdo</a>
+    <div id="accessState" class="access-state card p-4" role="status">
+        <h1 class="section-title">Área do Profissional</h1>
+        <p id="accessMessage">Verificando seu acesso…</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <button id="retryAccess" class="btn primary-btn" hidden>Tentar novamente</button>
+            <a class="btn ghost-btn" href="index.html">Voltar à minha agenda</a>
+        </div>
+    </div>
+    <div id="professionalApp" class="professional-app" hidden>
+        <aside class="professional-sidebar">
+            <a class="brand" href="index.html"><i class="fa-solid fa-leaf" aria-hidden="true"></i> InfoHelp</a>
+            <div class="sidebar-heading">ÁREA DO PROFISSIONAL</div>
+            <button id="menuToggle" class="btn ghost-btn mobile-menu" aria-expanded="false" aria-controls="professionalNav"><i class="fa-solid fa-bars" aria-hidden="true"></i> Menu</button>
+            <nav id="professionalNav" aria-label="Navegação profissional">
+                <a href="#inicio" data-page="inicio"><i class="fa-solid fa-house" aria-hidden="true"></i> Início</a>
+                <a href="#pacientes" data-page="pacientes"><i class="fa-solid fa-user-group" aria-hidden="true"></i> Pacientes</a>
+                <a href="#agenda" data-page="agenda"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Agenda / Consultas</a>
+                <a href="#atendimentos" data-page="atendimentos"><i class="fa-solid fa-check" aria-hidden="true"></i> Atendimentos</a>
+                <a href="#perfil" data-page="perfil"><i class="fa-regular fa-user" aria-hidden="true"></i> Perfil</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p class="helper-text">Organização para cuidar.<br>Um atendimento de cada vez.</p>
+                <button id="professionalLogout" class="btn logout-btn w-100"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Sair</button>
+            </div>
+        </aside>
+        <main id="content" class="professional-main" tabindex="-1">
+            <header class="professional-header">
+                <div><p class="eyebrow">SEU ESPAÇO DE ATENDIMENTO</p><h1 id="pageTitle">Início</h1><p id="pageDescription" class="subtitle"></p></div>
+                <button id="refreshProfessional" class="btn ghost-btn"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Atualizar</button>
+            </header>
+            <p id="feedback" role="status" aria-live="polite"></p>
+            <section id="pageContent" aria-busy="false"></section>
+            <p class="privacy-note"><i class="fa-solid fa-lock" aria-hidden="true"></i> Apenas pacientes vinculados a você. Horários de Brasília.</p>
+        </main>
+    </div>
+    <dialog id="patientDialog" aria-labelledby="patientTitle">
+        <div class="d-flex justify-content-between align-items-start gap-3"><h2 id="patientTitle" class="section-title">Paciente</h2><button id="closePatient" class="btn ghost-btn" aria-label="Fechar detalhes do paciente">Fechar</button></div>
+        <div id="patientDetails"></div>
+    </dialog>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Área Administrativa — InfoHelp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="./static/css/style.css">
+    <link rel="stylesheet" href="./static/css/profissional.css">
+    <link rel="stylesheet" href="./static/css/admin.css">
+    <script src="./static/js/admin.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#adminContent">Pular para o conteúdo</a>
+    <div id="adminAccess" class="access-state card p-4" role="status">
+        <h1 class="section-title">Área Administrativa</h1>
+        <p id="adminAccessMessage">Verificando seu acesso…</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <button id="retryAdmin" class="btn primary-btn" hidden>Tentar novamente</button>
+            <a class="btn ghost-btn" href="index.html">Voltar à agenda</a>
+        </div>
+    </div>
+    <div id="adminApp" class="professional-app admin-app" hidden>
+        <aside class="professional-sidebar">
+            <a class="brand" href="index.html"><i class="fa-solid fa-leaf" aria-hidden="true"></i> InfoHelp</a>
+            <div class="sidebar-heading">ADMINISTRAÇÃO</div>
+            <button id="adminMenuToggle" class="btn ghost-btn mobile-menu" aria-expanded="false" aria-controls="adminNav"><i class="fa-solid fa-bars" aria-hidden="true"></i> Menu</button>
+            <nav id="adminNav" aria-label="Navegação administrativa">
+                <a href="#dashboard" data-admin-page="dashboard"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> Dashboard</a>
+                <a href="#usuarios" data-admin-page="usuarios"><i class="fa-solid fa-users" aria-hidden="true"></i> Usuários</a>
+                <a href="#psicologos" data-admin-page="psicologos"><i class="fa-solid fa-user-doctor" aria-hidden="true"></i> Psicólogos</a>
+                <a href="#vinculos" data-admin-page="vinculos"><i class="fa-solid fa-link" aria-hidden="true"></i> Vínculos</a>
+                <a href="#perfil" data-admin-page="perfil"><i class="fa-regular fa-user" aria-hidden="true"></i> Perfil</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p class="helper-text">Ações sensíveis são registradas na auditoria.</p>
+                <button id="adminLogout" class="btn logout-btn w-100"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Sair</button>
+            </div>
+        </aside>
+        <main id="adminContent" class="professional-main" tabindex="-1">
+            <header class="professional-header">
+                <div><p class="eyebrow">GESTÃO DA PLATAFORMA</p><h1 id="adminTitle">Dashboard</h1><p id="adminDescription" class="subtitle"></p></div>
+                <button id="refreshAdmin" class="btn ghost-btn"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Atualizar</button>
+            </header>
+            <p id="adminFeedback" role="status" aria-live="polite"></p>
+            <section id="adminPage" aria-busy="false"></section>
+            <p class="privacy-note"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Permissões e vínculos são validados pelo servidor em cada operação.</p>
+        </main>
+    </div>
+
+    <dialog id="adminDetailDialog" aria-labelledby="adminDialogTitle">
+        <div class="dialog-heading"><h2 id="adminDialogTitle" class="section-title">Detalhes</h2><button id="closeAdminDialog" class="btn ghost-btn">Fechar</button></div>
+        <p id="adminDialogFeedback" role="status" aria-live="polite"></p>
+        <div id="adminDialogBody"></div>
+    </dialog>
+    <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+        <h2 id="confirmTitle" class="section-title"></h2>
+        <p id="confirmMessage"></p>
+        <div class="d-flex justify-content-end gap-2"><button id="cancelConfirm" class="btn ghost-btn">Cancelar</button><button id="acceptConfirm" class="btn danger-action">Confirmar</button></div>
+    </dialog>
+</body>
+</html>

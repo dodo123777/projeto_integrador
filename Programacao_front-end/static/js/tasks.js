@@ -127,15 +127,20 @@ class TaskManager {
 
             li.innerHTML = `
                 <div class="task-details d-flex flex-column flex-grow-1 gap-1">
-                    <span class="fw-bold">${task.text}</span>
-                    <span class="time fw-semibold">Horário: ${task.time}</span>
-                    <span class="time fw-semibold">Concluir até: ${task.deadline}</span>
+                    <span class="fw-bold"></span>
+                    <span class="time fw-semibold"></span>
+                    <span class="time fw-semibold"></span>
                 </div>
                 <div class="task-actions d-flex flex-wrap justify-content-end gap-2">
                     <button class="btn delete-btn fw-bold">Remover</button>
                     <button class="btn check-btn fw-bold">${task.completed ? 'Desfazer' : 'Concluir'}</button>
                 </div>
             `;
+
+            const details = li.querySelectorAll('.task-details span');
+            details[0].textContent = task.text;
+            details[1].textContent = `Horário: ${task.time}`;
+            details[2].textContent = `Concluir até: ${task.deadline}`;
 
             li.classList.add('fade-in');
 
