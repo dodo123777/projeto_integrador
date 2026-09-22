@@ -73,11 +73,16 @@ class DashboardManager {
             });
         }
 
-        window.addEventListener('resize', () => {
+        const scheduleRender = () => {
             clearTimeout(this.resizeTimer);
             this.resizeTimer = setTimeout(() => {
                 if (this.lastStats) this.render(this.lastStats);
             }, 150);
+        };
+        window.addEventListener('resize', scheduleRender);
+        this.chartResizeObserver = new ResizeObserver(scheduleRender);
+        [this.statusChart, this.weeklyChart, this.periodChart].forEach(canvas => {
+            if (canvas) this.chartResizeObserver.observe(canvas);
         });
     }
 
@@ -137,19 +142,23 @@ class DashboardManager {
 
     setupCanvas(canvas) {
         const rect = canvas.getBoundingClientRect();
-        const width = Math.max(rect.width, 260);
-        const height = Math.max(rect.height, Number(canvas.getAttribute('height')) || 220);
+        const { width, height } = rect;
+        if (width <= 0 || height <= 0) return null;
+
+        // O tamanho CSS e a referencia; canvas.height ja inclui a escala da tela.
         const ratio = window.devicePixelRatio || 1;
-        canvas.width = width * ratio;
-        canvas.height = height * ratio;
+        canvas.width = Math.max(1, Math.round(width * ratio));
+        canvas.height = Math.max(1, Math.round(height * ratio));
         const ctx = canvas.getContext('2d');
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
         ctx.clearRect(0, 0, width, height);
         return { ctx, width, height };
     }
 
     drawStatusChart(day) {
-        const { ctx, width, height } = this.setupCanvas(this.statusChart);
+        const canvasState = this.setupCanvas(this.statusChart);
+        if (!canvasState) return;
+        const { ctx, width, height } = canvasState;
         const total = day.total;
         const completed = day.completed;
         const pending = day.pending;
@@ -190,13 +199,15 @@ class DashboardManager {
     }
 
     drawWeeklyChart(week) {
-        const { ctx, width, height } = this.setupCanvas(this.weeklyChart);
+        const canvasState = this.setupCanvas(this.weeklyChart);
+        if (!canvasState) return;
+        const { ctx, width, height } = canvasState;
         const padding = { top: 22, right: 12, bottom: 34, left: 30 };
         const chartWidth = width - padding.left - padding.right;
         const chartHeight = height - padding.top - padding.bottom;
         const maxValue = Math.max(1, ...week.map(day => day.total));
         const barGap = 10;
-        const barWidth = Math.max(16, (chartWidth - barGap * (week.length - 1)) / week.length);
+        const barWidth = Math.max(1, (chartWidth - barGap * (week.length - 1)) / week.length);
 
         this.drawAxis(ctx, padding, width, height);
 
@@ -222,7 +233,9 @@ class DashboardManager {
     }
 
     drawPeriodChart(periods) {
-        const { ctx, width, height } = this.setupCanvas(this.periodChart);
+        const canvasState = this.setupCanvas(this.periodChart);
+        if (!canvasState) return;
+        const { ctx, width, height } = canvasState;
         const padding = { top: 26, right: 42, bottom: 18, left: 72 };
         const rowHeight = 42;
         const barWidth = width - padding.left - padding.right;
@@ -276,7 +289,9 @@ class DashboardManager {
     }
 
     drawEmptyState(canvas, text) {
-        const { ctx, width, height } = this.setupCanvas(canvas);
+        const canvasState = this.setupCanvas(canvas);
+        if (!canvasState) return;
+        const { ctx, width, height } = canvasState;
         ctx.fillStyle = this.colors.muted;
         ctx.font = '700 14px Inter, sans-serif';
         ctx.textAlign = 'center';
