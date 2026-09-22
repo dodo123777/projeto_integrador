@@ -4,7 +4,7 @@
 
 A administração usa **o mesmo `/login`, a mesma tabela `usuarios`, bcrypt e JWT do restante da plataforma**. Não há tabela de senhas administrativas, senha fixa, login paralelo ou chave Supabase no navegador.
 
-Adaptação ao banco real preparada e aguardando aprovação: [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). Não executar migrations antes da confirmação explícita. Dados profissionais agora ficam em `usuarios`, sem tabela `profissionais`.
+Adaptação ao banco real aplicada em 22/09/2026: [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). Dados profissionais ficam em `usuarios`, sem tabela `profissionais`.
 
 O Flask consulta o banco para decidir a área de destino:
 
@@ -77,7 +77,7 @@ Não há `DROP`, reset de banco, exclusão de usuário/consulta ou banco paralel
 
 `criado_em` dos registros anteriores fica `NULL`, pois a data histórica é desconhecida. Novos cadastros recebem `CURRENT_TIMESTAMP`. A interface mostra `—` quando não há data; não se inventa a data real de cadastro.
 
-**Migrations criadas/preparadas, nenhuma aplicada.** Em 17/09/2026, a conexão do `.env` privado foi validada e o schema remoto foi consultado somente em leitura: existem `usuarios` e `tarefas`, mas faltam as colunas e tabelas novas. Os IDs reais são `BIGINT`; as referências das migrations foram ajustadas para esse tipo. Antes da aplicação, execute `preflight_admin.sql` no desenvolvimento e confira colunas existentes, roles, constraints, proprietários, RLS/policies e grants. Resultados completos em [VALIDACAO_PROJETO.md](VALIDACAO_PROJETO.md).
+**Migrations aplicadas em 22/09/2026.** O preflight confirmou `usuarios`/`tarefas` e IDs `BIGINT`; o pós-teste confirmou preservação dos 7 usuários anteriores e das 14 tarefas, criação das três tabelas previstas, 1 administrador ativo e remoção dos grants de `anon`/`authenticated`. Resultados completos em [VALIDACAO_PROJETO.md](VALIDACAO_PROJETO.md).
 
 ## Rotas administrativas
 
