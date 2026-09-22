@@ -1,6 +1,6 @@
 # Adaptação ao Supabase existente — proposta para aprovação
 
-**Status: análise concluída, código local adaptado e SQL preparado. Nenhuma migration executada. A aplicação no Supabase depende da confirmação do usuário.**
+**Status: migrations 001/002 aplicadas no Supabase real em 22/09/2026 após confirmação explícita. Conta administrativa inicial criada e fluxos reais de login/sessão/dashboard validados.**
 
 ## Diagnóstico real de 17/09/2026
 
@@ -106,14 +106,12 @@ Isso acompanha o comportamento documentado: RLS sem policy nega acesso normal po
 
 Não serão adicionadas policies baseadas em `auth.uid()` que não correspondem aos IDs BIGINT/JWT atuais. Adotar RLS por usuário na conexão Flask exigiria outra proposta: papel sem bypass, contexto de identidade por transação e policies compatíveis.
 
-## Aplicação proposta — somente depois da confirmação
+## Aplicação realizada e próximos passos
 
-1. Repetir `preflight_admin.sql` e comparar com este diagnóstico para detectar mudanças desde a análise.
-2. Obter exportação privada verificável do schema e de `usuarios`/`tarefas`, mantendo o banco atual. Não recriar tabelas.
-3. Usar janela de manutenção e aplicar **001 revisada e depois 002 revisada**, com o papel confiável atual. Cada arquivo usa transação, `lock_timeout=5s` e `statement_timeout=60s`. Interromper na primeira falha.
-4. Executar `postflight_admin.sql` somente de leitura, comparar IDs/hashes/referências com a exportação e conferir contagens estáveis durante a manutenção. Após migration, nenhum usuário deve virar admin/psicólogo automaticamente.
-5. Usar o backend adaptado, testar login com uma conta existente e CRUD com dados de teste previamente autorizados. Definir a conta para bootstrap administrativo, ainda sem aplicar promoção automaticamente.
-6. Testar duas contas profissionais, vínculos diferentes, retirada de vínculo com mesmo JWT, bloqueio/reativação e auditoria; validar grants/papéis da Data API. Só então publicar a versão adaptada.
+1. A aplicação das duas migrations e o bootstrap administrativo foram feitos em uma única transação de operação; qualquer falha teria provocado rollback.
+2. Hashes de verificação confirmaram que os 7 usuários anteriores e as 14 tarefas permaneceram inalterados. O banco ficou com 8 usuários, 1 administrador ativo e nenhuma tarefa órfã.
+3. Grants diretos de `anon`/`authenticated` nas cinco tabelas foram removidos. Login, `/sessao` e `/admin/dashboard` responderam HTTP 200 com role e destino corretos.
+4. Próximo passo operacional: promover contas de teste para psicólogo, criar vínculos/consultas e validar retirada de vínculo, bloqueio/reativação e auditoria com usuários reais autorizados.
 
 ## Riscos e recuperação
 
@@ -137,4 +135,4 @@ Não serão adicionadas policies baseadas em `auth.uid()` que não correspondem 
 - SQL e blocos PL/pgSQL validados em parser local, sem conexão de escrita. A compatibilidade de execução e os fluxos reais pós-migration ainda dependem da aplicação aprovada.
 - **56 testes Python passaram** com banco/IA simulados. As interfaces administrativa e profissional passaram novamente em Chromium de testes, sem usar perfis do Chrome, em 1440/768/390/320 px. Sintaxe Python/JavaScript e `git diff --check` passaram.
 
-**Aguardar confirmação explícita para executar migrations.**
+**Migrations aplicadas. Não reaplicar ou modificar o schema sem novo preflight e revisão das mudanças posteriores.**

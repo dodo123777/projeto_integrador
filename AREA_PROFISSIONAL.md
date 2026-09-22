@@ -2,7 +2,7 @@
 
 > A evolução administrativa está documentada em [AREA_ADMIN.md](AREA_ADMIN.md). A autorização atual usa `usuarios.role`, `usuarios.ativo` e versão de sessão; vínculos são encerrados logicamente e consultados novamente em cada operação.
 
-> A proposta atual para o banco real está em [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md), aguardando aprovação. CRP/especialidade/habilitação ficam em `usuarios`, sem tabela `profissionais` e com apenas três roles. As migrations revisadas ainda não foram aplicadas.
+> A adaptação ao banco real foi aplicada em 22/09/2026 e está registrada em [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). CRP/especialidade/habilitação ficam em `usuarios`, sem tabela `profissionais` e com apenas três roles.
 
 ## Arquitetura e análise
 

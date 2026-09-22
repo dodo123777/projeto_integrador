@@ -1,8 +1,8 @@
 # Validação do projeto — 17/09/2026
 
-Atualização da adaptação ao banco real: [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). As migrations 001/002 foram revisadas para guardar todos os dados profissionais em `usuarios`, sem tabela de profissionais. O código local passou em 56 testes após essa adaptação; os resultados abaixo também registram a validação anterior. Nenhuma migration foi aplicada.
+Atualização da adaptação ao banco real: [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). As migrations 001/002 foram aplicadas em 22/09/2026, guardando todos os dados profissionais em `usuarios`, sem tabela de profissionais. O código passou em 56 testes; login, sessão e dashboard administrativos também passaram contra o banco real.
 
-Os testes locais passaram. A conexão com o Supabase funciona, mas o backend atual ainda não consegue fazer login nesse banco porque faltam migrations. A API Gemini recusou a chave configurada.
+Os testes locais passaram. A conexão com o Supabase, o login e as rotas administrativas funcionam com o schema migrado. A validação anterior da API Gemini recusou a chave configurada e esse ponto permanece independente da autenticação e dos painéis.
 
 ## Testes executados
 
@@ -31,7 +31,7 @@ Os testes de navegador usaram Chromium de testes separado, com APIs interceptada
 - Foram encontrados 7 usuários, sem grupos de e-mails duplicados ao ignorar maiúsculas/minúsculas. Não foram exportados nomes, e-mails ou senhas.
 - RLS está habilitada em `usuarios` e `tarefas`, sem policies nessas tabelas. O papel da conexão tem `BYPASSRLS`; o isolamento dessa conexão continua dependendo do backend. Acessos da Data API, grants e concorrência não foram validados.
 
-As migrations `001_area_profissional.sql` e `002_roles_admin_auditoria.sql` foram ajustadas localmente para usar referências `BIGINT`, compatíveis com os IDs encontrados. **Nenhuma migration foi aplicada.** Não houve criação de contas, mudança de permissões, alteração de registros ou deploy no banco real.
+As migrations `001_area_profissional.sql` e `002_roles_admin_auditoria.sql` usam referências `BIGINT` compatíveis com os IDs encontrados. **Ambas foram aplicadas em 22/09/2026.** Os 7 usuários anteriores e as 14 tarefas foram preservados; uma nova conta administrativa foi criada por solicitação explícita. Grants de `anon`/`authenticated` foram revogados conforme o plano. Não houve deploy externo nesta sessão.
 
 ## Para testar os fluxos completos no banco
 
