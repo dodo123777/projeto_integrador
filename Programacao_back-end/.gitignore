@@ -12,6 +12,11 @@ dist/
 
 # Compiled Python bytecode
 *.py[cod]
+__pycache__/
+
+# Local Python virtual environment
+venv/
+.venv/
 
 # Log files
 *.log
@@ -48,3 +53,4 @@ Thumbs.db
 *.mov
 *.wmv
 
+.env

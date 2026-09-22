@@ -1,63 +1,157 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Organizadora de Tarefas</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
-    <!-- CSS estático -->
-    <link rel="stylesheet" href="./static/css/style.css">
-</head>
-<body>
-    <!-- Botão Sair fixo -->
-    <button id="logoutBtn" class="logout-btn">Sair</button>
-
-    <!-- Logo UNISAL -->
-    <div class="logo-container">
-        <img src="./static/images/unisal-removebg-preview.png" alt="UNISAL Logo">
-    </div>
-
-    <div class="container">
-        <!-- Barra de Progresso com texto dentro -->
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"><span id="progressPerc"></span></div>
-            <div class="progress-text">Progresso do Dia</div>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Agenda Organizadora de Tarefas</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <link rel="stylesheet" href="./static/css/style.css">
+    </head>
+    <body class="d-flex flex-column align-items-center min-vh-100 px-3 pt-4 pb-5">
+        <div class="top-actions d-flex flex-wrap justify-content-end align-items-center gap-2">
+            <a id="professionalLink" class="btn ghost-btn" href="profissional.html" hidden>Área do Profissional</a>
+            <a id="adminLink" class="btn ghost-btn" href="admin.html" hidden>Área Administrativa</a>
+            <a class="btn ghost-btn d-inline-flex align-items-center gap-2" href="chat.html"><i class="fa-solid fa-robot"></i> Chat IA</a>
+            <button id="focusToggle" class="btn ghost-btn">Modo foco</button>
+            <button id="logoutBtn" class="btn logout-btn">Sair</button>
         </div>
 
-        <!-- Seleção de data -->
-        <div class="date-picker">
-            <label for="selectedDate">Selecione um dia:</label>
-            <input type="date" id="selectedDate">
+        <div class="logo-container d-flex justify-content-center align-items-center">
+            <img class="img-fluid" src="./static/images/unisal-removebg-preview.png" alt="UNISAL Logo">
         </div>
 
-        <!-- Adicionar tarefas -->
-        <div class="task-container">
-            <input type="text" id="taskInput" placeholder="Digite uma nova tarefa...">
-            <label for="timeInput">Insira o horário (ex: 13:30 ou 08:00):</label>
-            <input type="text" id="timeInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}">
-            <label for="deadlineInput">Defina o horário de conclusão (ex: 18:00):</label>
-            <input type="text" id="deadlineInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}">
-            <button id="addTaskButton">Adicionar Tarefa</button>
+        <main class="layout container-fluid px-0">
+            <div class="row g-3">
+                <section class="col-12 col-lg-6 d-flex flex-column gap-3">
+                    <div class="section-header">
+                        <h1 class="mb-0 fw-bold">Planeje seu dia sem sobrecarga</h1>
+                        <p class="subtitle mt-2 mb-0">Blocos curtos, pistas visuais e mensagens de incentivo para manter o foco.</p>
+                    </div>
+
+                    <div class="progress-text text-center fw-bold mt-1">Progresso do Dia</div>
+                    <div class="progress progress-container">
+                        <div class="progress-bar flex-row align-items-center justify-content-end fw-bold" id="progressBar"><span id="progressPerc"></span></div>
+                    </div>
+                    <div class="progress-caption fw-semibold" id="progressCaption">Comece com uma tarefa pequena para ganhar ritmo.</div>
+
+                    <section class="card p-3 gap-3" aria-labelledby="dashboardTitle">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <h2 class="section-title mb-0 fw-bold" id="dashboardTitle">Resumo do cliente</h2>
+                                <p class="helper-text mb-0" id="dashboardSubtitle">Acompanhe tarefas criadas, pendentes e concluídas.</p>
+                            </div>
+                            <button id="refreshDashboard" class="btn icon-btn d-inline-flex align-items-center justify-content-center rounded-circle p-0 flex-shrink-0" title="Atualizar gráficos" aria-label="Atualizar gráficos">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="row row-cols-2 row-cols-sm-4 g-2">
+                            <div class="col">
+                                <article class="metric-card card h-100 justify-content-between">
+                                    <span>Total</span>
+                                    <strong id="metricTotal">0</strong>
+                                </article>
+                            </div>
+                            <div class="col">
+                                <article class="metric-card card h-100 justify-content-between">
+                                    <span>Concluídas</span>
+                                    <strong id="metricCompleted">0</strong>
+                                </article>
+                            </div>
+                            <div class="col">
+                                <article class="metric-card card h-100 justify-content-between">
+                                    <span>Pendentes</span>
+                                    <strong id="metricPending">0</strong>
+                                </article>
+                            </div>
+                            <div class="col">
+                                <article class="metric-card card h-100 justify-content-between highlight">
+                                    <span>Progresso</span>
+                                    <strong id="metricRate">0%</strong>
+                                </article>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <article class="chart-panel card h-100">
+                                    <div class="chart-heading d-flex justify-content-between align-items-start gap-3">
+                                        <span>Concluídas x Pendentes</span>
+                                        <small id="statusChartLabel">Hoje</small>
+                                    </div>
+                                    <canvas class="d-block w-100" id="statusChart" height="220"></canvas>
+                                </article>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <article class="chart-panel card h-100">
+                                    <div class="chart-heading d-flex justify-content-between align-items-start gap-3">
+                                        <span>Últimos 7 dias</span>
+                                        <small>Tarefas feitas por dia</small>
+                                    </div>
+                                    <canvas class="d-block w-100" id="weeklyChart" height="220"></canvas>
+                                </article>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <article class="chart-panel card h-100">
+                                    <div class="chart-heading d-flex flex-column align-items-start gap-1">
+                                        <span>Por período</span>
+                                        <small>Conclusões no dia</small>
+                                    </div>
+                                    <canvas class="d-block w-100" id="periodChart" height="220"></canvas>
+                                </article>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div class="card p-3 gap-3">
+                            <label class="form-label mb-0" for="selectedDate">Selecione um dia</label>
+                            <input class="form-control" type="date" id="selectedDate">
+                        </div>
+
+                        <div class="card p-3 gap-3">
+                            <h2 class="section-title mb-0 fw-bold">Adicionar tarefa</h2>
+                            <p class="helper-text mb-0">Use frases curtas e objetivas. Ex.: "Ler 3 páginas" ou "Responder 2 e-mails".</p>
+                            <input class="form-control" type="text" id="taskInput" placeholder="Digite uma nova tarefa em passos curtos">
+                            <div class="row g-2">
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label fw-semibold" for="timeInput">Horário de início</label>
+                                    <input class="form-control" type="text" id="timeInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="08:00">
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label fw-semibold" for="deadlineInput">Concluir até</label>
+                                    <input class="form-control" type="text" id="deadlineInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="18:00">
+                                </div>
+                            </div>
+                            <button id="addTaskButton" class="btn btn-primary primary-btn w-100 fw-bold">Adicionar tarefa</button>
+                            <div id="statusMessage" class="status-message fw-semibold" role="status" aria-live="polite"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="col-12 col-lg-6 d-flex flex-column gap-3">
+                    <div class="card p-3">
+                        <h2 class="section-title mb-0 fw-bold">Tarefas do dia</h2>
+                        <p class="helper-text mb-0">Conclua, adie ou remova sem perder de vista o que é prioridade.</p>
+                        <div class="task-list-container w-100 overflow-y-auto mt-3 p-3">
+                            <ul id="taskList" class="list-unstyled mb-0"></ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <div class="congrats-message position-fixed top-50 start-50 translate-middle text-center" id="congratsMessage">
+            Parabéns! Você completou todas as tarefas do dia!
         </div>
 
-        <!-- Lista de tarefas -->
-        <div class="task-list-container">
-            <ul id="taskList"></ul>
-        </div>
-    </div>
+        <canvas id="fireworksCanvas" class="position-fixed top-0 start-0 w-100 h-100"></canvas>
 
-    <!-- Mensagem de Parabéns -->
-    <div class="congrats-message" id="congratsMessage">
-        Parabéns! Você completou todas as tarefas do dia! 🎉
-    </div>
-
-    <!-- Canvas para fogos -->
-    <canvas id="fireworksCanvas"></canvas>
-
-    <!-- Scripts estáticos -->
-    <script src="./static/js/auth.js"></script>
-    <script src="./static/js/fireworks.js"></script>
-    <script src="./static/js/progress.js"></script>
-    <script src="./static/js/tasks.js"></script>
-</body>
+        <script src="./static/js/auth.js"></script>
+        <script src="./static/js/fireworks.js"></script>
+        <script src="./static/js/progress.js"></script>
+        <script src="./static/js/tasks.js"></script>
+    </body>
 </html>

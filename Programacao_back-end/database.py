@@ -1,4 +1,5 @@
 import psycopg2
+import threading
 from config import Config
 
 class DatabaseManager:
@@ -7,9 +8,16 @@ class DatabaseManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(DatabaseManager, cls).__new__(cls)
-            cls._instance.conn = None
-            cls._instance._connect()
+            cls._instance._local = threading.local()
         return cls._instance
+
+    @property
+    def conn(self):
+        return getattr(self._local, 'conn', None)
+
+    @conn.setter
+    def conn(self, value):
+        self._local.conn = value
 
     def _connect(self):
         if self.conn is None or self.conn.closed:
@@ -27,12 +35,23 @@ class DatabaseManager:
                 raise
 
     def get_cursor(self):
-        self._connect()
-        return self.conn.cursor()
+        try:
+            self._connect()
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT 1")
+            return cursor
+        except psycopg2.OperationalError:
+            self.conn = None
+            self._connect()
+            return self.conn.cursor()
 
     def commit(self):
         if self.conn:
             self.conn.commit()
+
+    def rollback(self):
+        if self.conn:
+            self.conn.rollback()
 
     def close(self):
         if self.conn and not self.conn.closed:

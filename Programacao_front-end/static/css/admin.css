@@ -1,0 +1,28 @@
+.admin-app .professional-sidebar nav a[aria-current="page"] { background: #edf3ff; box-shadow: inset 3px 0 #0f4662; }
+.admin-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.admin-metrics .metric-card:nth-child(2) { --bs-card-bg: #e8f8f6; --bs-card-border-color: #bce5de; }
+.admin-metrics .metric-card:nth-child(5) { --bs-card-bg: #fff0f3; --bs-card-border-color: #f4c7d0; }
+.dialog-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 20px; }
+.detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.detail-item small { display: block; color: #5c7083; margin-bottom: 4px; }
+.detail-item strong { color: #10344a; overflow-wrap: anywhere; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+.danger-action { --bs-btn-bg: #b52e46; --bs-btn-color: #fff; --bs-btn-border-color: #b52e46; }
+.success-action { --bs-btn-bg: #0f7a8c; --bs-btn-color: #fff; --bs-btn-border-color: #0f7a8c; }
+.pagination-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; color: #5c7083; }
+.audit-list { display: grid; gap: 10px; }
+.audit-entry { border-left: 3px solid #0f8b8d; padding: 10px 12px; background: #f9fbfd; border-radius: 0 8px 8px 0; }
+.audit-entry p { margin: 0; color: #10344a; }
+.audit-entry small { color: #5c7083; }
+.admin-form { padding: 18px; margin-top: 20px; background: #f9fbfd; border: 1px solid #e2e8f0; border-radius: 8px; }
+.admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.admin-form label { display: block; margin-bottom: 5px; }
+.inactive-row { opacity: .65; }
+#adminFeedback:empty, #adminDialogFeedback:empty { display: none; }
+#adminFeedback, #adminDialogFeedback { padding: 12px 16px; border-radius: 8px; background: #edf3ff; color: #0f4662; }
+#adminFeedback.error, #adminDialogFeedback.error { background: #fff0f3; color: #9a2036; }
+@media (max-width: 1000px) { .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 575px) {
+    .admin-metrics, .detail-grid, .admin-form-grid { grid-template-columns: 1fr; }
+    .pagination-bar { align-items: stretch; flex-direction: column; }
+}

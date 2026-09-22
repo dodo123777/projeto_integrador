@@ -1,7 +1,8 @@
 // URL da API (back-end no Render)
-const API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000'
-    : 'https://projeto-integrador-uvxi.onrender.com';
+const API_URL =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000'
+        : 'https://projeto-integrador-uvxi.onrender.com';
 
 class LoginManager {
     constructor() {
@@ -32,7 +33,6 @@ class LoginManager {
         // Botões principais
         document.getElementById('loginBtn').addEventListener('click', () => this.fazerLogin());
         document.getElementById('registerBtn').addEventListener('click', () => this.fazerRegistro());
-        document.getElementById('resetBtn').addEventListener('click', () => this.fazerReset());
 
         // Botões de navegação
         document.getElementById('openRegisterBtn').addEventListener('click', () => this.abrirRegistro());
@@ -42,43 +42,59 @@ class LoginManager {
 
         // Enter para fazer login
         document.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" && this.loginForm.style.display !== "none") {
+            if (e.key === "Enter" && !this.loginForm.classList.contains('d-none')) {
                 this.fazerLogin();
             }
         });
     }
 
-    checkAlreadyLoggedIn() {
-        if (localStorage.getItem('token')) {
-            window.location.href = 'index.html';
+    async checkAlreadyLoggedIn() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                window.location.href = await this.destination(token);
+            } catch (error) {
+                localStorage.removeItem('token');
+                this.erroLogin.textContent = error.message;
+            }
         }
+    }
+
+    async destination(token) {
+        const response = await fetch(`${this.baseURL}/sessao`, {
+            headers: { Authorization: token }, cache: 'no-store'
+        });
+        if (response.status === 401) throw new Error('Sua sessão expirou. Entre novamente.');
+        if (!response.ok) throw new Error('Não foi possível verificar sua conta.');
+        const data = await response.json();
+        const allowed = ['index.html', 'profissional.html', 'admin.html'];
+        return allowed.includes(data.destino) ? data.destino : 'index.html';
     }
 
     // Navegação entre formulários
     abrirRegistro() {
-        this.registerForm.style.display = 'flex';
-        this.loginForm.style.display = 'none';
+        this.registerForm.classList.remove('d-none');
+        this.loginForm.classList.add('d-none');
         this.limparErros();
     }
 
     fecharRegistro() {
-        this.registerForm.style.display = 'none';
-        this.loginForm.style.display = 'flex';
+        this.registerForm.classList.add('d-none');
+        this.loginForm.classList.remove('d-none');
         this.limparErros();
         this.limparCamposRegistro();
     }
 
     abrirReset() {
-        this.resetForm.style.display = 'flex';
-        this.loginForm.style.display = 'none';
+        this.resetForm.classList.remove('d-none');
+        this.loginForm.classList.add('d-none');
         this.limparErros();
     }
 
     fecharReset() {
-        this.resetForm.style.display = 'none';
-        this.loginForm.style.display = 'flex';
+        this.resetForm.classList.add('d-none');
+        this.loginForm.classList.remove('d-none');
         this.limparErros();
-        this.limparCamposReset();
     }
 
     limparErros() {
@@ -93,10 +109,6 @@ class LoginManager {
         document.getElementById('regSenha').value = '';
     }
 
-    limparCamposReset() {
-        document.getElementById('resetEmail').value = '';
-        document.getElementById('resetSenha').value = '';
-    }
 
     // Validações
     validarEmail(email) {
@@ -134,8 +146,14 @@ class LoginManager {
             const data = await response.json();
 
             if (data.token) {
-                localStorage.setItem('token', data.token);
-                window.location.href = "index.html";
+                // já guardar com prefixo Bearer para facilitar uso nas outras requisições
+                const bearerToken = data.token.startsWith('Bearer ')
+                    ? data.token
+                    : `Bearer ${data.token}`;
+                localStorage.setItem('token', bearerToken);
+                const allowed = ['index.html', 'profissional.html', 'admin.html'];
+                window.location.href = allowed.includes(data.destino)
+                    ? data.destino : await this.destination(bearerToken);
             } else {
                 this.erroLogin.innerText = data.erro || 'Erro no login';
             }
@@ -175,13 +193,14 @@ class LoginManager {
 
             const data = await response.json();
 
-            if (data.msg) {
+            if (response.ok && data.msg) {
+                // sucesso
                 alert(data.msg + " Agora faça login.");
                 this.fecharRegistro();
-                // Preencher email no login
                 document.getElementById('loginEmail').value = email;
             } else {
-                this.erroRegistro.innerText = data.erro || 'Erro ao registrar';
+                // erro vindo do back-end (ex.: "E-mail já cadastrado!")
+                this.erroRegistro.innerText = data.erro || data.msg || 'Erro ao registrar';
             }
         } catch (error) {
             console.error('Erro ao registrar:', error);
@@ -189,48 +208,7 @@ class LoginManager {
         }
     }
 
-    async fazerReset() {
-        const email = document.getElementById('resetEmail').value.trim();
-        const nova_senha = document.getElementById('resetSenha').value;
 
-        // Validações
-        if (!email || !nova_senha) {
-            this.erroReset.innerText = "Preencha todos os campos!";
-            return;
-        }
-
-        if (!this.validarEmail(email)) {
-            this.erroReset.innerText = "Email inválido!";
-            return;
-        }
-
-        if (!this.validarSenha(nova_senha)) {
-            this.erroReset.innerText = "A senha deve ter pelo menos 6 caracteres!";
-            return;
-        }
-
-        try {
-            const response = await fetch(`${this.baseURL}/esqueci_senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, nova_senha })
-            });
-
-            const data = await response.json();
-
-            if (data.msg) {
-                alert(data.msg + " Agora faça login.");
-                this.fecharReset();
-                // Preencher email no login
-                document.getElementById('loginEmail').value = email;
-            } else {
-                this.erroReset.innerText = data.erro || 'Erro ao redefinir';
-            }
-        } catch (error) {
-            console.error('Erro ao redefinir senha:', error);
-            this.erroReset.innerText = 'Erro ao conectar ao servidor!';
-        }
-    }
 }
 
 // Inicializar quando a página carregar
