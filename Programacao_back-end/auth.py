@@ -52,7 +52,7 @@ def auth_required(f):
             user_model.db.rollback()
             current_app.logger.error('Falha ao validar sessão: %s', type(error).__name__)
             return jsonify({'erro': 'Não foi possível validar a sessão.'}), 503
-        if not current_user or not current_user['ativo'] or current_user['role'] not in ('paciente', 'psicologo', 'medico', 'admin'):
+        if not current_user or not current_user['ativo'] or current_user['role'] not in ('paciente', 'psicologo', 'admin'):
             return jsonify({'erro': 'Conta inexistente ou desativada'}), 401
         if decoded.get('ver', 0) != current_user['auth_version']:
             return jsonify({'erro': 'Sessão revogada. Entre novamente.'}), 401

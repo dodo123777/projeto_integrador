@@ -1,5 +1,7 @@
 # Validação do projeto — 17/09/2026
 
+Atualização da adaptação ao banco real: [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). As migrations 001/002 foram revisadas para guardar todos os dados profissionais em `usuarios`, sem tabela de profissionais. O código local passou em 56 testes após essa adaptação; os resultados abaixo também registram a validação anterior. Nenhuma migration foi aplicada.
+
 Os testes locais passaram. A conexão com o Supabase funciona, mas o backend atual ainda não consegue fazer login nesse banco porque faltam migrations. A API Gemini recusou a chave configurada.
 
 ## Testes executados

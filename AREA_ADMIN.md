@@ -4,16 +4,17 @@
 
 A administração usa **o mesmo `/login`, a mesma tabela `usuarios`, bcrypt e JWT do restante da plataforma**. Não há tabela de senhas administrativas, senha fixa, login paralelo ou chave Supabase no navegador.
 
+Adaptação ao banco real preparada e aguardando aprovação: [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md). Não executar migrations antes da confirmação explícita. Dados profissionais agora ficam em `usuarios`, sem tabela `profissionais`.
+
 O Flask consulta o banco para decidir a área de destino:
 
 | Role em `usuarios` | Cadastro/concessão | Destino após login |
 | --- | --- | --- |
 | `paciente` | Todo cadastro público | `index.html` |
-| `psicologo` | Promoção administrativa com perfil em `profissionais` | `profissional.html` |
+| `psicologo` | Promoção administrativa com perfil na mesma linha de `usuarios` | `profissional.html` |
 | `admin` | Bootstrap protegido do primeiro administrador pelo terminal | `admin.html` |
-| `medico` | Compatibilidade com profissionais já existentes | `profissional.html` |
 
-Médicos existentes foram preservados para não remover o acesso criado na etapa anterior. O fluxo administrativo desta etapa promove pacientes para psicólogos. O cadastro público não aceita concessão de papéis, mesmo se a requisição enviar `role`, `tipo` ou `user_type`.
+O schema real não possui roles/perfis anteriores. A adaptação usa somente paciente, psicólogo e administrador, conforme a solicitação atual. O cadastro público não aceita concessão de papéis, mesmo se a requisição enviar `role`, `tipo` ou `user_type`.
 
 O frontend recebe `role` e `destino` calculados pelo servidor após o login. Para uma sessão existente, consulta `GET /sessao`. Essas informações servem para navegação; a autorização de cada API permanece obrigatória no Flask.
 
@@ -66,20 +67,15 @@ O CSS administrativo reutiliza `style.css` e `profissional.css`, incluindo fonte
 
 ## Tabelas e migrations
 
-Tabelas existentes utilizadas: `usuarios`, `tarefas`, `profissionais`, `profissional_pacientes` e `consultas`.
+Tabelas reais existentes: `usuarios` e `tarefas`.
 
-A migration `002_roles_admin_auditoria.sql`:
+A migration 001 revisada adiciona em `usuarios`: `role`, `ativo`, `auth_version`, `criado_em`, `registro`, `especialidade` e `perfil_profissional_ativo`. Cria `profissional_pacientes` e `consultas`, com referências BIGINT diretamente à identidade em `usuarios`. Não cria `profissionais`.
 
-- Acrescenta `usuarios.role`, `usuarios.ativo`, `usuarios.auth_version` e `usuarios.criado_em` se ausentes.
-- Preenche **somente roles nulas**, reaproveitando a profissão existente ou usando `paciente`; preserva roles já definidas.
-- Define o padrão público `paciente` e restringe os valores de role.
-- Acrescenta `profissional_pacientes.ativo` e `desvinculado_em`.
-- Cria `auditoria_admin` com administrador, ação, usuário afetado, profissional/paciente quando relevantes, detalhes e data/hora.
-- Habilita RLS nas tabelas novas desta etapa e em `usuarios`, e revoga acesso de `anon`/`authenticated` às tabelas de contas e da área restrita quando esses papéis existem.
+A migration 002 revisada cria `auditoria_admin`, preserva/habilita RLS e revoga grants de PUBLIC/anon/authenticated em contas, tarefas, vínculos, consultas e auditoria. Nenhuma identidade ou senha é criada pela migration. Campos/tipos/dados de `tarefas` não mudam.
 
 Não há `DROP`, reset de banco, exclusão de usuário/consulta ou banco paralelo. A chave estrangeira das consultas continua apontando para o vínculo, que é preservado ao ser encerrado. Reativar um vínculo atualiza suas datas; os períodos anteriores continuam registrados na auditoria.
 
-`criado_em` dos registros anteriores recebe a data de aplicação caso esse campo não exista. **Não é possível reconstruir a data real do cadastro antigo** a partir do código disponível.
+`criado_em` dos registros anteriores fica `NULL`, pois a data histórica é desconhecida. Novos cadastros recebem `CURRENT_TIMESTAMP`. A interface mostra `—` quando não há data; não se inventa a data real de cadastro.
 
 **Migrations criadas/preparadas, nenhuma aplicada.** Em 17/09/2026, a conexão do `.env` privado foi validada e o schema remoto foi consultado somente em leitura: existem `usuarios` e `tarefas`, mas faltam as colunas e tabelas novas. Os IDs reais são `BIGINT`; as referências das migrations foram ajustadas para esse tipo. Antes da aplicação, execute `preflight_admin.sql` no desenvolvimento e confira colunas existentes, roles, constraints, proprietários, RLS/policies e grants. Resultados completos em [VALIDACAO_PROJETO.md](VALIDACAO_PROJETO.md).
 
@@ -163,6 +159,8 @@ Em produção, publique a nova página e assets no frontend já existente; a API
 Os comandos profissionais anteriores agora exigem `--admin-email` para identificar uma conta administrativa ativa e registrar a operação. Preferencialmente use a interface administrativa; a CLI é uma ferramenta de operação do servidor com acesso às credenciais do banco, não um endpoint acessível a pacientes.
 
 ## Testes, vulnerabilidades e pendências
+
+Após a revisão para o banco real: **56 testes passaram**, incluindo promoção/edição profissional na mesma linha de `usuarios`, sem tabela de profissionais. SQL e blocos PL/pgSQL passaram em parser local. Interfaces profissional/administrativa passaram novamente com APIs simuladas. As validações descritas abaixo registram também as etapas anteriores.
 
 Testes isolados executados: **54 passaram** em 17/09/2026, abrangendo autenticação, tarefas, chat, área profissional e administração. Incluem paciente/psicólogo recusados em todas as rotas administrativas, administrador permitido, busca/paginação, promoção, confirmação, bloqueio, reativação, roles ignoradas no payload/JWT, auditoria, bootstrap e proteção administrativa. Os testes de tarefas/chat usam banco e provedor simulados. A interface do paciente também passou no Chromium de testes; detalhes em [VALIDACAO_PROJETO.md](VALIDACAO_PROJETO.md).
 

@@ -10,7 +10,7 @@ from models.admin import AdminModel
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 admin_model = AdminModel()
-ROLES = ('paciente', 'psicologo', 'medico', 'admin')
+ROLES = ('paciente', 'psicologo', 'admin')
 
 
 def admin_required(view):

@@ -55,8 +55,8 @@ class AdminModel:
         with self.db.get_cursor() as cur:
             cur.execute('''
                 SELECT u.id, u.nome, u.email, u.role, u.ativo, u.criado_em,
-                    p.registro, p.especialidade, p.ativo AS perfil_profissional_ativo
-                FROM usuarios u LEFT JOIN profissionais p ON p.usuario_id = u.id
+                    u.registro, u.especialidade, u.perfil_profissional_ativo
+                FROM usuarios u
                 WHERE u.id = %s
             ''', (user_id,))
             row = cur.fetchone()
@@ -74,12 +74,12 @@ class AdminModel:
             cur.execute(f'SELECT COUNT(*) FROM usuarios u {condition}', params)
             total = cur.fetchone()[0]
             cur.execute(f'''
-                SELECT u.id, u.nome, u.email, u.ativo, u.criado_em, p.registro, p.especialidade,
-                    p.ativo AS perfil_profissional_ativo,
+                SELECT u.id, u.nome, u.email, u.ativo, u.criado_em, u.registro, u.especialidade,
+                    u.perfil_profissional_ativo,
                     COUNT(v.paciente_id) FILTER (WHERE v.ativo) AS pacientes
-                FROM usuarios u LEFT JOIN profissionais p ON p.usuario_id = u.id
+                FROM usuarios u
                 LEFT JOIN profissional_pacientes v ON v.profissional_id = u.id
-                {condition} GROUP BY u.id, p.usuario_id
+                {condition} GROUP BY u.id
                 ORDER BY lower(u.nome), u.id LIMIT %s OFFSET %s
             ''', params + (per_page, offset))
             rows = self._dicts(cur)
@@ -161,18 +161,13 @@ class AdminModel:
         try:
             with self.db.get_cursor() as cur:
                 cur.execute('''
-                    UPDATE usuarios SET role = 'psicologo'
+                    UPDATE usuarios SET role = 'psicologo', registro = %s,
+                        especialidade = %s, perfil_profissional_ativo = TRUE
                     WHERE id = %s AND role = 'paciente' AND ativo RETURNING id
-                ''', (user_id,))
+                ''', (registration, specialty, user_id))
                 if not cur.fetchone():
                     self.db.rollback()
                     return False
-                cur.execute('''
-                    INSERT INTO profissionais (usuario_id, tipo, registro, especialidade, ativo)
-                    VALUES (%s, 'psicologo', %s, %s, TRUE)
-                    ON CONFLICT (usuario_id) DO UPDATE SET tipo = 'psicologo', registro = EXCLUDED.registro,
-                        especialidade = EXCLUDED.especialidade, ativo = TRUE
-                ''', (user_id, registration, specialty))
                 self._write_audit(cur, admin_id, 'usuario_promovido_psicologo', affected=user_id,
                                   details={'registro': registration, 'especialidade': specialty})
             self.db.commit()
@@ -210,12 +205,9 @@ class AdminModel:
         try:
             with self.db.get_cursor() as cur:
                 cur.execute('''
-                    INSERT INTO profissionais (usuario_id, tipo, registro, especialidade, ativo)
-                    SELECT id, 'psicologo', %s, %s, %s FROM usuarios
-                    WHERE id = %s AND role = 'psicologo'
-                    ON CONFLICT (usuario_id) DO UPDATE SET registro = EXCLUDED.registro,
-                        especialidade = EXCLUDED.especialidade, ativo = EXCLUDED.ativo, tipo = 'psicologo'
-                    RETURNING usuario_id
+                    UPDATE usuarios SET registro = %s, especialidade = %s,
+                        perfil_profissional_ativo = %s
+                    WHERE id = %s AND role = 'psicologo' RETURNING id
                 ''', (registration, specialty, active, user_id))
                 if not cur.fetchone():
                     self.db.rollback()
@@ -237,9 +229,8 @@ class AdminModel:
                     INSERT INTO profissional_pacientes
                         (profissional_id, paciente_id, ativo, vinculado_em, desvinculado_em)
                     SELECT psi.id, pac.id, TRUE, CURRENT_TIMESTAMP, NULL
-                    FROM usuarios psi JOIN profissionais p ON p.usuario_id = psi.id
-                    CROSS JOIN usuarios pac
-                    WHERE psi.id = %s AND psi.role = 'psicologo' AND psi.ativo AND p.ativo
+                    FROM usuarios psi CROSS JOIN usuarios pac
+                    WHERE psi.id = %s AND psi.role = 'psicologo' AND psi.ativo AND psi.perfil_profissional_ativo
                         AND pac.id = %s AND pac.role = 'paciente' AND pac.ativo
                     ON CONFLICT (profissional_id, paciente_id) DO UPDATE
                         SET ativo = TRUE, vinculado_em = CURRENT_TIMESTAMP, desvinculado_em = NULL

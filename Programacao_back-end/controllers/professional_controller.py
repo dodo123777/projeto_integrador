@@ -22,7 +22,7 @@ def professional_required(view):
     @wraps(view)
     @auth_required
     def wrapped(*args, **kwargs):
-        if request.current_user['role'] not in ('psicologo', 'medico'):
+        if request.current_user['role'] != 'psicologo':
             return jsonify({'erro': 'Acesso exclusivo a profissionais autorizados.', 'codigo': 'acesso_profissional_negado'}), 403
         profile = professional_model.profile(request.user_id)
         if not profile or profile['tipo'] != request.current_user['role']:
@@ -108,7 +108,7 @@ def create_appointment():
     if type(patient_id) is not int or patient_id <= 0:
         return jsonify({'erro': 'Selecione um paciente vinculado.'}), 400
     kind = data.get('tipo')
-    allowed = ('Retorno', 'Consulta médica' if request.professional['tipo'] == 'medico' else 'Consulta psicológica')
+    allowed = ('Retorno', 'Consulta psicológica')
     if kind not in allowed:
         return jsonify({'erro': 'Tipo de consulta inválido para este profissional.'}), 400
     try:

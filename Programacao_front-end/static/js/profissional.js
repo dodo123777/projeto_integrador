@@ -95,7 +95,7 @@
                 const rows = await api(page === 'atendimentos' ? '/consultas?historico=1' : '/consultas');
                 html = `<section class="card panel">${page === 'agenda' ? '<div class="panel-heading"><h2 class="section-title">Suas consultas</h2><button id="newAppointment" class="btn primary-btn">Agendar consulta</button></div><div id="appointmentFormContainer" hidden></div><form id="dateFilter" class="filter-bar"><div><label for="appointmentDate" class="form-label">Filtrar por data</label><input id="appointmentDate" class="form-control" type="date"></div><button class="btn ghost-btn" type="submit">Filtrar</button><button id="clearDate" class="btn ghost-btn" type="button">Todas</button></form>' : '<h2 class="section-title mb-3">Histórico de atendimentos</h2>'}<div id="appointmentsResult">${appointmentsTable(rows, page === 'agenda')}</div></section>`;
             } else {
-                const fields = [['Nome', profile.nome], ['Profissão', profile.tipo === 'medico' ? 'Médico(a)' : 'Psicólogo(a)'], ['Registro profissional', profile.registro], ['Especialidade', profile.especialidade || 'Não informada'], ['E-mail', profile.email]];
+                const fields = [['Nome', profile.nome], ['Profissão', 'Psicólogo(a)'], ['Registro profissional', profile.registro], ['Especialidade', profile.especialidade || 'Não informada'], ['E-mail', profile.email]];
                 html = `<section class="card panel"><dl class="profile-grid">${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl><p class="helper-text mt-4 mb-0">Para atualizar seus dados profissionais, entre em contato com a equipe responsável pela plataforma.</p></section>`;
             }
             if (version === generation) $('pageContent').innerHTML = html;
@@ -126,7 +126,7 @@
         const container = $('appointmentFormContainer');
         container.hidden = false;
         if (!rows.length) { container.innerHTML = empty('É necessário ter um paciente vinculado para agendar.'); return; }
-        const kind = profile.tipo === 'medico' ? 'Consulta médica' : 'Consulta psicológica';
+        const kind = 'Consulta psicológica';
         container.innerHTML = `<form id="appointmentForm" class="appointment-form mb-4"><div><label class="form-label" for="newPatient">Paciente</label><select id="newPatient" class="form-control" required><option value="">Selecione</option>${rows.map(row => `<option value="${row.id}">${escape(row.nome)}</option>`).join('')}</select></div><div><label class="form-label" for="newKind">Tipo de consulta</label><select id="newKind" class="form-control"><option>${kind}</option><option>Retorno</option></select></div><div><label class="form-label" for="newStart">Data e horário de Brasília</label><input id="newStart" type="datetime-local" class="form-control" required></div><div class="wide d-flex gap-2"><button class="btn primary-btn" type="submit">Salvar consulta</button><button id="cancelNew" class="btn ghost-btn" type="button">Fechar</button></div></form>`;
         $('newPatient').focus();
     }

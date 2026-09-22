@@ -15,9 +15,9 @@ class ProfessionalModel:
 
     def profile(self, user_id):
         rows = self._rows('''
-            SELECT p.usuario_id AS id, u.nome, u.email, p.tipo, p.registro, p.especialidade
-            FROM profissionais p JOIN usuarios u ON u.id = p.usuario_id
-            WHERE p.usuario_id = %s AND p.ativo AND u.ativo AND u.role IN ('psicologo', 'medico')
+            SELECT id, nome, email, role AS tipo, registro, especialidade
+            FROM usuarios
+            WHERE id = %s AND ativo AND perfil_profissional_ativo AND role = 'psicologo'
         ''', (user_id,))
         return rows[0] if rows else None
 

@@ -236,8 +236,21 @@ class AdminQueriesTest(unittest.TestCase):
         self.assertTrue(self.model.promote_psychologist(1, 12, 'CRP 1', 'Clínica'))
         calls = self.cursor.execute.call_args_list
         self.assertIn("UPDATE usuarios SET role = 'psicologo'", calls[0].args[0])
-        self.assertIn('INSERT INTO profissionais', calls[1].args[0])
-        self.assertIn('INSERT INTO auditoria_admin', calls[2].args[0])
+        self.assertEqual(calls[0].args[1], ('CRP 1', 'Clínica', 12))
+        self.assertIn('perfil_profissional_ativo = TRUE', calls[0].args[0])
+        self.assertIn('INSERT INTO auditoria_admin', calls[1].args[0])
+        self.assertEqual(len(calls), 2)
+
+    def test_profile_edit_updates_existing_user_and_audits_together(self):
+        self.cursor.fetchone.return_value = (7,)
+        self.assertTrue(self.model.update_psychologist(1, 7, 'CRP 7', 'Clínica', False))
+        calls = self.cursor.execute.call_args_list
+        self.assertIn('UPDATE usuarios SET registro', calls[0].args[0])
+        self.assertIn("role = 'psicologo'", calls[0].args[0])
+        self.assertEqual(calls[0].args[1], ('CRP 7', 'Clínica', False, 7))
+        self.assertIn('INSERT INTO auditoria_admin', calls[1].args[0])
+        self.assertEqual(len(calls), 2)
+        self.model.db.commit.assert_called_once()
 
     def test_audit_failure_rolls_back_administrative_change(self):
         self.cursor.fetchone.return_value = (12,)

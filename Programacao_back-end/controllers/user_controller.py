@@ -63,7 +63,7 @@ def login():
 def destination_for(role):
     if role == 'admin':
         return 'admin.html'
-    if role in ('psicologo', 'medico'):
+    if role == 'psicologo':
         return 'profissional.html'
     return 'index.html'
 

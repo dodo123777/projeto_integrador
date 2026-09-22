@@ -2,6 +2,8 @@
 
 > A evolução administrativa está documentada em [AREA_ADMIN.md](AREA_ADMIN.md). A autorização atual usa `usuarios.role`, `usuarios.ativo` e versão de sessão; vínculos são encerrados logicamente e consultados novamente em cada operação.
 
+> A proposta atual para o banco real está em [PLANO_MIGRACAO_SUPABASE.md](PLANO_MIGRACAO_SUPABASE.md), aguardando aprovação. CRP/especialidade/habilitação ficam em `usuarios`, sem tabela `profissionais` e com apenas três roles. As migrations revisadas ainda não foram aplicadas.
+
 ## Arquitetura e análise
 
 O projeto existente é uma agenda de apoio à organização de rotina, com tarefas pessoais, indicadores de progresso e chat com Gemini. Usa Flask e Blueprints, models com SQL parametrizado via psycopg2 e PostgreSQL (configuração preparada para Supabase). O frontend é estático, em HTML, CSS e JavaScript; usa Bootstrap, Font Awesome e a fonte Inter nas páginas internas. Frontend e backend são publicados separadamente, com CORS e JWT HS256 de duas horas enviado no cabeçalho `Authorization`.
@@ -63,7 +65,7 @@ Todos os novos endpoints exigem JWT e perfil profissional ativo no banco:
 
 ## Autorização e privacidade
 
-O JWT fornece identidade, expiração e versão de sessão. Cada requisição consulta `usuarios` e exige conta ativa e role atual `medico` ou `psicologo`, além de perfil ativo em `profissionais`. Pacientes e administradores não recebem acesso profissional. O cadastro público cria somente pacientes e ignora campos de papel enviados pelo cliente. Bloqueios invalidam a versão dos tokens antigos, inclusive após reativação.
+O JWT fornece identidade, expiração e versão de sessão. Cada requisição consulta `usuarios` e exige conta ativa, role atual `psicologo` e `perfil_profissional_ativo` na mesma linha. Pacientes e administradores não recebem acesso profissional. O cadastro público cria somente pacientes e ignora campos de papel enviados pelo cliente. Bloqueios invalidam a versão dos tokens antigos, inclusive após reativação.
 
 O servidor obtém o profissional do JWT, não do corpo ou da URL. Todas as consultas SQL usam esse ID; detalhes, consultas, resumos, agendamentos e alterações de status exigem vínculo ativo em `profissional_pacientes` e paciente ativo. Encerrar um vínculo preserva a linha e os históricos, mas recusa novos acessos com o mesmo JWT imediatamente após a transação. O profissional não pode listar todos os usuários nem criar vínculos via HTTP. Respostas têm `Cache-Control: no-store`, e falhas de banco não retornam detalhes de conexão. Conteúdos da interface são escapados antes da renderização.
 
@@ -77,11 +79,11 @@ O armazenamento do JWT em `localStorage` foi mantido para compatibilidade. Isso 
 
 A migração cria, no banco existente:
 
-- `profissionais`: extensão de `usuarios`, com profissão, registro, especialidade opcional e habilitação.
 - `profissional_pacientes`: vínculo explícito, único e com data de criação.
 - `consultas`: profissional/paciente vinculados, início, tipo e status.
+- `auditoria_admin`: registros das ações administrativas, pela migration 002.
 
-Não altera as tabelas `usuarios` ou `tarefas`, não concede papéis automaticamente e não insere dados fictícios. A chave estrangeira composta impede consultas sem vínculo. Um índice único impede duas consultas não canceladas do mesmo profissional no mesmo instante. O agendamento não possui duração, portanto não faz verificação de sobreposição de intervalos.
+Adiciona campos de permissões/perfil à tabela existente `usuarios`; não cria outra tabela de pessoas. Mantém campos e dados de `tarefas`, ajustando somente permissões públicas. Usuários antigos recebem role paciente, ativo TRUE e versão zero; data histórica fica NULL. Não concede acesso administrativo/profissional automaticamente e não insere dados fictícios. A chave estrangeira composta impede consultas sem vínculo. Um índice único impede duas consultas não canceladas do mesmo profissional no mesmo instante. O agendamento não possui duração, portanto não faz verificação de sobreposição de intervalos.
 
 1. Confira o schema existente e configure `SECRET_KEY`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` no ambiente ou `.env` do backend. Use o mesmo segredo JWT já utilizado pela aplicação. Gemini continua com suas configurações atuais.
 2. Execute o diagnóstico `preflight_admin.sql` no banco de desenvolvimento e confira o schema real. Aplique `Programacao_back-end/migrations/001_area_profissional.sql` se ainda não aplicada, seguido de `002_roles_admin_auditoria.sql`, como papel confiável do backend. As migrations não são executadas ao iniciar a aplicação. Verifique a compatibilidade de `usuarios.id` com as referências inteiras e os campos/roles existentes. Crie o primeiro administrador conforme `AREA_ADMIN.md` antes dos comandos abaixo; a interface administrativa passa a gerenciar perfis e vínculos.
@@ -111,7 +113,7 @@ python -m http.server 5500 --directory Programacao_front-end
 
 ## Regras da agenda
 
-- Tipos: consulta médica para médicos, consulta psicológica para psicólogos e retorno para ambos.
+- Tipos: consulta psicológica e retorno.
 - Agendamento requer data futura com fuso horário; a interface usa Brasília (`America/Sao_Paulo`, entrada com offset `-03:00`).
 - Fluxo: `agendada → confirmada → em_atendimento → finalizada`.
 - `agendada` e `confirmada` podem ir para `cancelada`.

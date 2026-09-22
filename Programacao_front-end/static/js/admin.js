@@ -10,7 +10,7 @@
         vinculos: ['Vínculos', 'Relações ativas e encerradas entre psicólogos e pacientes.'],
         perfil: ['Perfil administrativo', 'Dados da conta autenticada.']
     };
-    const roleLabels = { paciente: 'Paciente', psicologo: 'Psicólogo(a)', medico: 'Médico(a)', admin: 'Administrador(a)' };
+    const roleLabels = { paciente: 'Paciente', psicologo: 'Psicólogo(a)', admin: 'Administrador(a)' };
     let admin = null;
     let generation = 0;
     let listPage = 1;

@@ -24,8 +24,8 @@ class ProfessionalRoutesTest(unittest.TestCase):
         self.addCleanup(self.secret.stop)
         app.config['TESTING'] = True
         self.client = app.test_client()
-        self.profile = {'id': 7, 'nome': 'Ana', 'email': 'ana@example.test', 'tipo': 'medico', 'registro': 'CRM teste', 'especialidade': None}
-        self.access = {'id': 7, 'nome': 'Ana', 'email': 'ana@example.test', 'role': 'medico', 'ativo': True, 'auth_version': 0}
+        self.profile = {'id': 7, 'nome': 'Ana', 'email': 'ana@example.test', 'tipo': 'psicologo', 'registro': 'CRP teste', 'especialidade': None}
+        self.access = {'id': 7, 'nome': 'Ana', 'email': 'ana@example.test', 'role': 'psicologo', 'ativo': True, 'auth_version': 0}
         self.access_patch = patch.object(auth_user_model, 'get_access_context', return_value=self.access)
         self.access_mock = self.access_patch.start()
         self.addCleanup(self.access_patch.stop)
@@ -56,8 +56,8 @@ class ProfessionalRoutesTest(unittest.TestCase):
                 with self.subTest(profile=profile, route=route):
                     self.assertEqual(self.client.open('/profissional' + route, method=method, headers=self.headers).status_code, 403)
 
-    def test_medico_and_psicologo_allowed_without_sensitive_fields(self):
-        for role in ('medico', 'psicologo'):
+    def test_psicologo_allowed_without_sensitive_fields(self):
+        for role in ('psicologo',):
             self.profile_mock.return_value = {**self.profile, 'tipo': role}
             self.access_mock.return_value = {**self.access, 'role': role}
             response = self.client.get('/profissional/me', headers=self.headers)
@@ -101,7 +101,7 @@ class ProfessionalRoutesTest(unittest.TestCase):
             appointments.assert_called_once_with(7, day='2026-09-20', history=True)
 
     def appointment_data(self):
-        return {'paciente_id': 12, 'tipo': 'Consulta médica', 'inicio': (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(), 'profissional_id': 8}
+        return {'paciente_id': 12, 'tipo': 'Consulta psicológica', 'inicio': (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(), 'profissional_id': 8}
 
     def test_create_appointment_ignores_spoofed_professional(self):
         with patch.object(professional_model, 'create_appointment', return_value=15) as create:
@@ -118,7 +118,7 @@ class ProfessionalRoutesTest(unittest.TestCase):
 
     def test_invalid_appointment_payloads_do_not_write(self):
         base = self.appointment_data()
-        payloads = [[], {}, {**base, 'paciente_id': True}, {**base, 'paciente_id': -1}, {**base, 'tipo': 'Consulta psicológica'}, {**base, 'inicio': '2026-01-01'}, {**base, 'inicio': None}, {**base, 'inicio': '2020-01-01T12:00:00Z'}, {**base, 'inicio': '2030-01-01T12:00:00'}]
+        payloads = [[], {}, {**base, 'paciente_id': True}, {**base, 'paciente_id': -1}, {**base, 'tipo': 'Consulta médica'}, {**base, 'inicio': '2026-01-01'}, {**base, 'inicio': None}, {**base, 'inicio': '2020-01-01T12:00:00Z'}, {**base, 'inicio': '2030-01-01T12:00:00'}]
         with patch.object(professional_model, 'create_appointment') as create:
             for payload in payloads:
                 with self.subTest(payload=payload):
@@ -205,6 +205,15 @@ class ProfessionalQueriesTest(unittest.TestCase):
         with self.assertRaises(psycopg2.errors.UniqueViolation):
             self.model.create_appointment(7, 26, 'start', 'Retorno')
         self.model.db.rollback.assert_called_once()
+
+    def test_professional_identity_and_profile_come_from_users(self):
+        self.model.profile(7)
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn('FROM usuarios', sql)
+        self.assertIn("role = 'psicologo'", sql)
+        self.assertIn('perfil_profissional_ativo', sql)
+        self.assertNotIn('FROM profissionais', sql)
+        self.assertEqual(params, (7,))
 
     def test_status_update_has_ownership_transition_and_start_time_checks(self):
         self.cursor.fetchone.return_value = None
