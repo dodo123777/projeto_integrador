@@ -33,7 +33,7 @@ def handle(route):
             content_type = {'.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png'}.get(file.suffix, 'application/octet-stream')
             route.fulfill(body=file.read_bytes(), content_type=content_type)
         return
-    if url.port != 5000:
+    if url.port != 5001:
         route.continue_()
         return
     headers = {'Access-Control-Allow-Origin': ORIGIN, 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS'}

@@ -1,7 +1,7 @@
 (() => {
     'use strict';
     const baseURL = ['localhost', '127.0.0.1'].includes(location.hostname)
-        ? 'http://localhost:5000' : 'https://projeto-integrador-uvxi.onrender.com';
+        ? 'http://localhost:5001' : 'https://projeto-integrador-uvxi.onrender.com';
     const $ = (id) => document.getElementById(id);
     const labels = { agendada: 'Agendada', confirmada: 'Confirmada', em_atendimento: 'Em atendimento', finalizada: 'Finalizada', cancelada: 'Cancelada' };
     const actions = { agendada: [['confirmada', 'Confirmar'], ['cancelada', 'Cancelar']], confirmada: [['em_atendimento', 'Iniciar'], ['cancelada', 'Cancelar']], em_atendimento: [['finalizada', 'Finalizar']] };

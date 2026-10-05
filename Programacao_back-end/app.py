@@ -59,5 +59,20 @@ def database_unavailable(error):
 def health():
     return jsonify({"status": "ok"}), 200
 
+
+@app.route('/health/ready')
+def readiness():
+    try:
+        with db_manager.get_cursor() as cursor:
+            cursor.fetchone()  # SELECT 1 executado pelo gerenciador de conexões.
+        payload, status = {'status': 'ok', 'api': 'ok', 'database': 'ok'}, 200
+    except psycopg2.Error as error:
+        db_manager.rollback()
+        app.logger.error('Banco indisponível no diagnóstico: %s', type(error).__name__)
+        payload, status = {'status': 'unavailable', 'api': 'ok', 'database': 'unavailable'}, 503
+    response = jsonify(payload)
+    response.headers['Cache-Control'] = 'no-store'
+    return response, status
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

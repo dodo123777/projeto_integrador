@@ -7,27 +7,41 @@ class TaskModel:
         self.db = db_manager
 
     def add_task(self, user_id, texto, data_tarefa, horario, deadline):
-        cur = self.db.get_cursor()
+        return self.add_recurring_tasks(user_id, texto, [data_tarefa], horario, deadline)[0]
+
+    def add_recurring_tasks(self, user_id, texto, dates, horario, deadline):
+        task_ids = []
         try:
-            cur.execute(
-                "INSERT INTO tarefas (usuario_id, data, texto, horario, deadline, concluida) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (user_id, data_tarefa, texto, horario, deadline, False)
-            )
-            task_id = cur.fetchone()[0]
+            with self.db.get_cursor() as cur:
+                for task_date in dates:
+                    cur.execute(
+                        "INSERT INTO tarefas (usuario_id, data, texto, horario, deadline, concluida) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                        (user_id, task_date, texto, horario, deadline, False)
+                    )
+                    task_ids.append(cur.fetchone()[0])
             self.db.commit()
-            return task_id
-        except Exception as e:
-            print(f"[task_model.py] Erro ao adicionar tarefa: {e}")
+            return task_ids
+        except Exception:
             self.db.rollback()
-            raise e
+            raise
+
+    def update_task(self, task_id, user_id, texto, data_tarefa, horario, deadline):
+        with self.db.get_cursor() as cur:
+            cur.execute(
+                "UPDATE tarefas SET texto = %s, data = %s, horario = %s, deadline = %s WHERE id = %s AND usuario_id = %s",
+                (texto, data_tarefa, horario, deadline, task_id, user_id)
+            )
+            changed = cur.rowcount > 0
+        self.db.commit()
+        return changed
 
     def list_tasks(self, user_id, data_tarefa=None):
         cur = self.db.get_cursor()
         if data_tarefa:
-            cur.execute("SELECT id, texto, horario, deadline, concluida FROM tarefas WHERE usuario_id = %s AND data = %s", 
+            cur.execute("SELECT id, texto, horario, deadline, concluida FROM tarefas WHERE usuario_id = %s AND data = %s ORDER BY horario, id",
                        (user_id, data_tarefa))
         else:
-            cur.execute("SELECT id, texto, horario, deadline, concluida, data FROM tarefas WHERE usuario_id = %s", 
+            cur.execute("SELECT id, texto, horario, deadline, concluida, data FROM tarefas WHERE usuario_id = %s ORDER BY data, horario, id",
                        (user_id,))
         
         tasks = []

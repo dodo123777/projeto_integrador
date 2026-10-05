@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     if ((professionalLink || adminLink) && token) {
         const base = ['localhost', '127.0.0.1'].includes(location.hostname)
-            ? 'http://localhost:5000' : 'https://projeto-integrador-uvxi.onrender.com';
+            ? 'http://localhost:5001' : 'https://projeto-integrador-uvxi.onrender.com';
         fetch(`${base}/sessao`, { headers: { Authorization: token }, cache: 'no-store' })
             .then(async response => response.ok ? response.json() : Promise.reject())
             .then(data => {

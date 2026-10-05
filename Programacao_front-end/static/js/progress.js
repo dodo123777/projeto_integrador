@@ -40,11 +40,17 @@ class ProgressManager {
             this.congratsMessage.style.display = "none";
         }, 5000);
     }
+
+    unavailable(message = 'Não foi possível carregar o progresso deste dia.') {
+        this.progressBar.style.width = '0%';
+        this.progressPerc.textContent = '—';
+        if (this.progressCaption) this.progressCaption.textContent = message;
+        this.congratsMessage.style.display = 'none';
+    }
 }
 
 class DashboardManager {
     constructor() {
-        this.token = localStorage.getItem('token');
         this.subtitle = document.getElementById('dashboardSubtitle');
         this.statusChartLabel = document.getElementById('statusChartLabel');
         this.metricTotal = document.getElementById('metricTotal');
@@ -88,31 +94,33 @@ class DashboardManager {
 
     async update(date) {
         if (!this.statusChart || !this.weeklyChart || !this.periodChart) return;
-
+        const version = this.updateVersion = (this.updateVersion || 0) + 1;
+        if (this.currentDate !== date) this.clear('Carregando gráficos…');
         this.currentDate = date;
         this.setLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/tarefas/estatisticas?date=${encodeURIComponent(date)}`, {
-                headers: { 'Authorization': this.token }
-            });
-
-            if (!response.ok) {
-                throw new Error('Nao foi possivel carregar os graficos.');
-            }
-
-            const stats = await response.json();
+            const stats = await apiRequest('/tarefas/estatisticas?date=' + encodeURIComponent(date));
+            if (version !== this.updateVersion || date !== document.getElementById('selectedDate').value) return;
             this.lastStats = stats;
             this.render(stats);
         } catch (error) {
-            console.error(error);
-            if (this.subtitle) this.subtitle.textContent = error.message;
-            this.drawEmptyState(this.statusChart, 'Sem dados');
-            this.drawEmptyState(this.weeklyChart, 'Sem dados');
-            this.drawEmptyState(this.periodChart, 'Sem dados');
+            if (version !== this.updateVersion || date !== document.getElementById('selectedDate').value || error.status === 401) return;
+            this.clear(error.message);
         } finally {
-            this.setLoading(false);
+            if (version === this.updateVersion) this.setLoading(false);
         }
+    }
+
+    clear(message) {
+        this.lastStats = null;
+        if (this.subtitle) this.subtitle.textContent = message;
+        [this.metricTotal, this.metricCompleted, this.metricPending, this.metricRate].forEach(metric => {
+            if (metric) metric.textContent = '—';
+        });
+        [this.statusChart, this.weeklyChart, this.periodChart].forEach(canvas => {
+            if (canvas) this.drawEmptyState(canvas, 'Gráfico indisponível');
+        });
     }
 
     setLoading(isLoading) {

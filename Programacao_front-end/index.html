@@ -9,37 +9,105 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
         <link rel="stylesheet" href="./static/css/style.css">
     </head>
-    <body class="d-flex flex-column align-items-center min-vh-100 px-3 pt-4 pb-5">
-        <div class="top-actions d-flex flex-wrap justify-content-end align-items-center gap-2">
-            <a id="professionalLink" class="btn ghost-btn" href="profissional.html" hidden>Área do Profissional</a>
-            <a id="adminLink" class="btn ghost-btn" href="admin.html" hidden>Área Administrativa</a>
-            <a class="btn ghost-btn d-inline-flex align-items-center gap-2" href="chat.html"><i class="fa-solid fa-robot"></i> Chat IA</a>
-            <button id="focusToggle" class="btn ghost-btn">Modo foco</button>
-            <button id="logoutBtn" class="btn logout-btn">Sair</button>
-        </div>
-
-        <div class="logo-container d-flex justify-content-center align-items-center">
-            <img class="img-fluid" src="./static/images/unisal-removebg-preview.png" alt="UNISAL Logo">
-        </div>
+    <body class="agenda-page min-vh-100">
+        <header class="app-header">
+            <a class="logo-container" href="index.html" aria-label="Página inicial">
+                <img class="img-fluid" src="./static/images/unisal-removebg-preview.png" alt="UNISAL Logo">
+            </a>
+            <div class="top-actions d-flex flex-wrap justify-content-end align-items-center gap-2">
+                <a id="professionalLink" class="btn ghost-btn" href="profissional.html" hidden>Área do Profissional</a>
+                <a id="adminLink" class="btn ghost-btn" href="admin.html" hidden>Área Administrativa</a>
+                <a class="btn ghost-btn d-inline-flex align-items-center gap-2" href="chat.html"><i class="fa-solid fa-robot"></i> Chat IA</a>
+                <button id="focusToggle" class="btn ghost-btn">Modo foco</button>
+                <button id="logoutBtn" class="btn logout-btn">Sair</button>
+            </div>
+        </header>
 
         <main class="layout container-fluid px-0">
-            <div class="row g-3">
-                <section class="col-12 col-lg-6 d-flex flex-column gap-3">
-                    <div class="section-header">
-                        <h1 class="mb-0 fw-bold">Planeje seu dia sem sobrecarga</h1>
-                        <p class="subtitle mt-2 mb-0">Blocos curtos, pistas visuais e mensagens de incentivo para manter o foco.</p>
-                    </div>
+            <div class="section-header mb-4">
+                <h1 class="mb-0 fw-bold">Planeje seu dia sem sobrecarga</h1>
+                <p class="subtitle mt-2 mb-0">Blocos curtos, pistas visuais e mensagens de incentivo para manter o foco.</p>
+            </div>
 
-                    <div class="progress-text text-center fw-bold mt-1">Progresso do Dia</div>
-                    <div class="progress progress-container">
-                        <div class="progress-bar flex-row align-items-center justify-content-end fw-bold" id="progressBar"><span id="progressPerc"></span></div>
-                    </div>
-                    <div class="progress-caption fw-semibold" id="progressCaption">Comece com uma tarefa pequena para ganhar ritmo.</div>
+            <nav class="app-tabs mb-4" role="tablist" aria-label="Agenda e clínicas">
+                <button class="app-tab" type="button" id="agendaTab" role="tab" aria-selected="true" aria-controls="agendaPanel" tabindex="0">
+                    <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Minha agenda
+                </button>
+                <button class="app-tab" type="button" id="clinicsTab" role="tab" aria-selected="false" aria-controls="clinicsPanel" tabindex="-1">
+                    <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> Clínicas próximas
+                </button>
+            </nav>
 
-                    <section class="card p-3 gap-3" aria-labelledby="dashboardTitle">
+            <section id="agendaPanel" role="tabpanel" aria-labelledby="agendaTab">
+                <div class="agenda-grid">
+                    <section class="daily-progress card p-3" aria-label="Progresso do dia">
+                        <div class="progress-text text-center fw-bold mt-1">Progresso do Dia</div>
+                        <div class="progress progress-container">
+                            <div class="progress-bar flex-row align-items-center justify-content-end fw-bold" id="progressBar"><span id="progressPerc"></span></div>
+                        </div>
+                        <div class="progress-caption fw-semibold" id="progressCaption">Comece com uma tarefa pequena para ganhar ritmo.</div>
+                    </section>
+
+                    <section class="task-planner d-flex flex-column gap-3" aria-label="Planejar tarefas">
+                        <div class="card p-3 gap-3">
+                            <label class="form-label mb-0" for="selectedDate">Selecione um dia</label>
+                            <input class="form-control" type="date" id="selectedDate">
+                        </div>
+
+                        <form id="taskForm" class="card p-3 gap-3" novalidate>
+                            <h2 class="section-title mb-0 fw-bold" id="taskFormTitle">Adicionar tarefa</h2>
+                            <p class="helper-text mb-0">Use frases curtas e objetivas. Ex.: "Ler 3 páginas" ou "Responder 2 e-mails".</p>
+                            <label class="form-label mb-0 fw-semibold" for="taskInput">O que você quer fazer?</label>
+                            <input class="form-control" type="text" id="taskInput" maxlength="500" required placeholder="Digite uma nova tarefa em passos curtos">
+                            <div id="editDateField" hidden>
+                                <label class="form-label fw-semibold" for="editTaskDate">Dia da tarefa</label>
+                                <input class="form-control" type="date" id="editTaskDate">
+                                <p class="helper-text mt-2 mb-0">Esta edição altera apenas esta ocorrência.</p>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label fw-semibold" for="timeInput">Horário de início</label>
+                                    <input class="form-control" type="text" id="timeInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="08:00" aria-describedby="timeInputHint">
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label fw-semibold" for="deadlineInput">Concluir até</label>
+                                    <input class="form-control" type="text" id="deadlineInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="18:00" aria-describedby="timeInputHint">
+                                </div>
+                            </div>
+                            <p class="helper-text mb-0" id="timeInputHint">Pode digitar só a hora: 18 vira 18:00.</p>
+                            <div id="repeatFields">
+                                <label class="form-label fw-semibold" for="repeatFrequency">Repetir</label>
+                                <select class="form-select" id="repeatFrequency">
+                                    <option value="none">Não repetir</option>
+                                    <option value="daily">Todos os dias</option>
+                                    <option value="weekly">Toda semana</option>
+                                </select>
+                                <div class="mt-2" id="repeatUntilField" hidden>
+                                    <label class="form-label fw-semibold" for="repeatUntil">Repetir até</label>
+                                    <input class="form-control" type="date" id="repeatUntil">
+                                    <p class="helper-text mt-2 mb-0">Crie até 90 ocorrências. Cada dia pode ser editado ou removido separadamente.</p>
+                                </div>
+                            </div>
+                            <button type="submit" id="addTaskButton" class="btn btn-primary primary-btn w-100 fw-bold">Adicionar tarefa</button>
+                            <button type="button" id="cancelEditButton" class="btn ghost-btn w-100" hidden>Cancelar edição</button>
+                            <div id="statusMessage" class="status-message fw-semibold" role="status" aria-live="polite"></div>
+                        </form>
+                    </section>
+
+                    <section class="daily-tasks card p-3" aria-labelledby="tasksTitle">
+                        <h2 class="section-title mb-0 fw-bold" id="tasksTitle">Tarefas do dia</h2>
+                        <p class="helper-text mb-0">Conclua, adie ou remova sem perder de vista o que é prioridade.</p>
+                        <p id="taskLoadStatus" class="helper-text mt-2 mb-0" role="status" aria-live="polite"></p>
+                        <button type="button" id="retryTasksButton" class="btn ghost-btn mt-2" hidden>Tentar carregar novamente</button>
+                        <div class="task-list-container w-100 overflow-y-auto mt-3 p-3">
+                            <ul id="taskList" class="list-unstyled mb-0"></ul>
+                        </div>
+                    </section>
+
+                    <section class="dashboard-card card p-3 gap-3" aria-labelledby="dashboardTitle">
                         <div class="d-flex justify-content-between align-items-start gap-3">
                             <div>
-                                <h2 class="section-title mb-0 fw-bold" id="dashboardTitle">Resumo do cliente</h2>
+                                <h2 class="section-title mb-0 fw-bold" id="dashboardTitle">Seu dia em números</h2>
                                 <p class="helper-text mb-0" id="dashboardSubtitle">Acompanhe tarefas criadas, pendentes e concluídas.</p>
                             </div>
                             <button id="refreshDashboard" class="btn icon-btn d-inline-flex align-items-center justify-content-center rounded-circle p-0 flex-shrink-0" title="Atualizar gráficos" aria-label="Atualizar gráficos">
@@ -75,7 +143,7 @@
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-12">
+                            <div class="col-12 col-lg-4">
                                 <article class="chart-panel card h-100">
                                     <div class="chart-heading d-flex justify-content-between align-items-start gap-3">
                                         <span>Concluídas x Pendentes</span>
@@ -84,7 +152,7 @@
                                     <canvas class="d-block w-100" id="statusChart" height="220"></canvas>
                                 </article>
                             </div>
-                            <div class="col-12 col-sm-6">
+                            <div class="col-12 col-lg-4">
                                 <article class="chart-panel card h-100">
                                     <div class="chart-heading d-flex justify-content-between align-items-start gap-3">
                                         <span>Últimos 7 dias</span>
@@ -93,7 +161,7 @@
                                     <canvas class="d-block w-100" id="weeklyChart" height="220"></canvas>
                                 </article>
                             </div>
-                            <div class="col-12 col-sm-6">
+                            <div class="col-12 col-lg-4">
                                 <article class="chart-panel card h-100">
                                     <div class="chart-heading d-flex flex-column align-items-start gap-1">
                                         <span>Por período</span>
@@ -104,43 +172,46 @@
                             </div>
                         </div>
                     </section>
+                </div>
+            </section>
 
-                    <div class="d-flex flex-column gap-3">
-                        <div class="card p-3 gap-3">
-                            <label class="form-label mb-0" for="selectedDate">Selecione um dia</label>
-                            <input class="form-control" type="date" id="selectedDate">
-                        </div>
-
-                        <div class="card p-3 gap-3">
-                            <h2 class="section-title mb-0 fw-bold">Adicionar tarefa</h2>
-                            <p class="helper-text mb-0">Use frases curtas e objetivas. Ex.: "Ler 3 páginas" ou "Responder 2 e-mails".</p>
-                            <input class="form-control" type="text" id="taskInput" placeholder="Digite uma nova tarefa em passos curtos">
-                            <div class="row g-2">
-                                <div class="col-12 col-sm-6">
-                                    <label class="form-label fw-semibold" for="timeInput">Horário de início</label>
-                                    <input class="form-control" type="text" id="timeInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="08:00">
-                                </div>
-                                <div class="col-12 col-sm-6">
-                                    <label class="form-label fw-semibold" for="deadlineInput">Concluir até</label>
-                                    <input class="form-control" type="text" id="deadlineInput" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="18:00">
-                                </div>
-                            </div>
-                            <button id="addTaskButton" class="btn btn-primary primary-btn w-100 fw-bold">Adicionar tarefa</button>
-                            <div id="statusMessage" class="status-message fw-semibold" role="status" aria-live="polite"></div>
-                        </div>
+            <section id="clinicsPanel" role="tabpanel" aria-labelledby="clinicsTab" hidden>
+                <div class="card p-3 p-md-4 gap-3">
+                    <div>
+                        <h2 class="section-title fw-bold mb-2">Encontre cuidado perto de você</h2>
+                        <p class="helper-text mb-0">Explore clínicas, consultórios e unidades de saúde da sua região.</p>
                     </div>
-                </section>
-
-                <section class="col-12 col-lg-6 d-flex flex-column gap-3">
-                    <div class="card p-3">
-                        <h2 class="section-title mb-0 fw-bold">Tarefas do dia</h2>
-                        <p class="helper-text mb-0">Conclua, adie ou remova sem perder de vista o que é prioridade.</p>
-                        <div class="task-list-container w-100 overflow-y-auto mt-3 p-3">
-                            <ul id="taskList" class="list-unstyled mb-0"></ul>
+                    <form id="clinicSearchForm" class="clinic-search">
+                        <div class="clinic-address-field">
+                            <label class="form-label fw-semibold" for="clinicAddress">Cidade, bairro ou endereço</label>
+                            <input class="form-control" id="clinicAddress" type="search" placeholder="Ex.: Campinas, São Paulo" minlength="3" maxlength="200" required>
                         </div>
+                        <div>
+                            <label class="form-label fw-semibold" for="clinicRadius">Distância da busca</label>
+                            <select class="form-select" id="clinicRadius">
+                                <option value="2000">Até 2 km</option>
+                                <option value="5000" selected>Até 5 km</option>
+                                <option value="10000">Até 10 km</option>
+                            </select>
+                        </div>
+                        <button class="btn primary-btn" type="submit" id="searchClinicsButton">Buscar clínicas</button>
+                        <button class="btn ghost-btn" type="button" id="locateClinicsButton"><i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i> Usar minha localização</button>
+                    </form>
+                    <p class="helper-text mb-0">Sua localização só é solicitada ao clicar no botão. A busca consulta serviços de mapas externos.</p>
+                    <div id="clinicStatus" class="clinic-status" role="status" aria-live="polite">Busque um lugar ou use sua localização para encontrar clínicas.</div>
+                    <div id="clinicLocationChoices" class="clinic-location-choices" role="group" aria-label="Escolha o local da busca" hidden></div>
+                    <p id="clinicMapNotice" class="helper-text mb-0" role="status" hidden>Não foi possível carregar as imagens do mapa. A lista de clínicas continua disponível.</p>
+                    <div class="clinics-grid">
+                        <div id="clinicsMap" class="clinics-map" role="region" aria-label="Mapa de clínicas próximas" aria-busy="false"></div>
+                        <section class="clinic-results" aria-labelledby="clinicResultsTitle" aria-busy="false">
+                            <h3 class="section-title fw-bold" id="clinicResultsTitle">Locais encontrados</h3>
+                            <p id="clinicResultsSummary" class="helper-text">Os resultados aparecerão aqui, do mais próximo ao mais distante.</p>
+                            <ul id="clinicList" class="list-unstyled mb-0"></ul>
+                        </section>
                     </div>
-                </section>
-            </div>
+                    <p class="helper-text mb-0">Dados de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>. Até 30 locais por busca. A cobertura pode variar; confirme horários e serviços com a clínica. As distâncias são em linha reta.</p>
+                </div>
+            </section>
         </main>
 
         <div class="congrats-message position-fixed top-50 start-50 translate-middle text-center" id="congratsMessage">
@@ -149,9 +220,11 @@
 
         <canvas id="fireworksCanvas" class="position-fixed top-0 start-0 w-100 h-100"></canvas>
 
+        <script src="./static/js/api.js"></script>
         <script src="./static/js/auth.js"></script>
         <script src="./static/js/fireworks.js"></script>
         <script src="./static/js/progress.js"></script>
         <script src="./static/js/tasks.js"></script>
+        <script src="./static/js/clinics.js"></script>
     </body>
 </html>

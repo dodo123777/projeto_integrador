@@ -1,12 +1,5 @@
-// URL da API (back-end no Render)
-const API_URL =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:5000'
-        : 'https://projeto-integrador-uvxi.onrender.com';
-
 class LoginManager {
     constructor() {
-        this.baseURL = API_URL;
         this.init();
     }
 
@@ -21,6 +14,8 @@ class LoginManager {
         this.erroLogin = document.getElementById('erroLogin');
         this.erroRegistro = document.getElementById('erroRegistro');
         this.erroReset = document.getElementById('erroReset');
+        this.retrySessionButton = document.getElementById('retrySessionButton');
+        this.retrySessionButton.addEventListener('click', () => this.checkAlreadyLoggedIn());
 
         // Adicionar event listeners
         this.addEventListeners();
@@ -50,23 +45,31 @@ class LoginManager {
 
     async checkAlreadyLoggedIn() {
         const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                window.location.href = await this.destination(token);
-            } catch (error) {
+        if (!token || this.verifyingSession) return;
+        this.verifyingSession = true;
+        this.retrySessionButton.hidden = true;
+        document.getElementById('loginBtn').disabled = true;
+        this.erroLogin.textContent = 'Verificando sua sessão…';
+        try {
+            window.location.href = await this.destination(token);
+        } catch (error) {
+            if (error.status === 401) {
                 localStorage.removeItem('token');
-                this.erroLogin.textContent = error.message;
+                this.erroLogin.textContent = 'Sua sessão expirou. Entre novamente.';
+            } else {
+                this.erroLogin.textContent = error.message + ' Sua sessão foi mantida.';
+                this.retrySessionButton.hidden = false;
             }
+        } finally {
+            this.verifyingSession = false;
+            document.getElementById('loginBtn').disabled = false;
         }
     }
 
     async destination(token) {
-        const response = await fetch(`${this.baseURL}/sessao`, {
-            headers: { Authorization: token }, cache: 'no-store'
+        const data = await apiRequest('/sessao', {
+            authenticated: false, headers: { Authorization: token }
         });
-        if (response.status === 401) throw new Error('Sua sessão expirou. Entre novamente.');
-        if (!response.ok) throw new Error('Não foi possível verificar sua conta.');
-        const data = await response.json();
         const allowed = ['index.html', 'profissional.html', 'admin.html'];
         return allowed.includes(data.destino) ? data.destino : 'index.html';
     }
@@ -122,6 +125,8 @@ class LoginManager {
 
     // Operações de API
     async fazerLogin() {
+        const button = document.getElementById('loginBtn');
+        if (button.disabled) return;
         const email = document.getElementById('loginEmail').value.trim();
         const senha = document.getElementById('loginSenha').value;
 
@@ -136,16 +141,14 @@ class LoginManager {
             return;
         }
 
+        button.disabled = true;
         try {
-            const response = await fetch(`${this.baseURL}/login`, {
+            const data = await apiRequest('/login', {
+                authenticated: false,
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, senha })
             });
-
-            const data = await response.json();
-
-            if (data.token) {
+            if (typeof data.token === 'string' && data.token) {
                 // já guardar com prefixo Bearer para facilitar uso nas outras requisições
                 const bearerToken = data.token.startsWith('Bearer ')
                     ? data.token
@@ -158,12 +161,18 @@ class LoginManager {
                 this.erroLogin.innerText = data.erro || 'Erro no login';
             }
         } catch (error) {
-            console.error('Erro ao fazer login:', error);
-            this.erroLogin.innerText = 'Erro ao conectar ao servidor!';
+            this.erroLogin.innerText = error.message;
+            if (localStorage.getItem('token') && error.status !== 401) {
+                this.retrySessionButton.hidden = false;
+            }
+        } finally {
+            button.disabled = false;
         }
     }
 
     async fazerRegistro() {
+        const button = document.getElementById('registerBtn');
+        if (button.disabled) return;
         const nome = document.getElementById('regNome').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const senha = document.getElementById('regSenha').value;
@@ -184,16 +193,14 @@ class LoginManager {
             return;
         }
 
+        button.disabled = true;
         try {
-            const response = await fetch(`${this.baseURL}/registrar`, {
+            const data = await apiRequest('/registrar', {
+                authenticated: false,
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nome, email, senha })
             });
-
-            const data = await response.json();
-
-            if (response.ok && data.msg) {
+            if (data.msg) {
                 // sucesso
                 alert(data.msg + " Agora faça login.");
                 this.fecharRegistro();
@@ -203,8 +210,9 @@ class LoginManager {
                 this.erroRegistro.innerText = data.erro || data.msg || 'Erro ao registrar';
             }
         } catch (error) {
-            console.error('Erro ao registrar:', error);
-            this.erroRegistro.innerText = 'Erro ao conectar ao servidor!';
+            this.erroRegistro.innerText = error.message;
+        } finally {
+            button.disabled = false;
         }
     }
 
