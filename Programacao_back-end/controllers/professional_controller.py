@@ -23,12 +23,18 @@ def professional_required(view):
     @wraps(view)
     @auth_required
     def wrapped(*args, **kwargs):
+        if request.current_user['role'] == 'admin' and request.method in ('GET', 'HEAD'):
+            request.professional = {key: request.current_user[key] for key in ('id', 'nome', 'email')}
+            request.professional['tipo'] = 'admin'
+            request.professional_scope = None
+            return view(*args, **kwargs)
         if request.current_user['role'] != 'psicologo':
             return jsonify({'erro': 'Acesso exclusivo a profissionais autorizados.', 'codigo': 'acesso_profissional_negado'}), 403
         profile = professional_model.profile(request.user_id)
         if not profile or profile['tipo'] != request.current_user['role']:
             return jsonify({'erro': 'Acesso exclusivo a profissionais autorizados.', 'codigo': 'acesso_profissional_negado'}), 403
         request.professional = profile
+        request.professional_scope = request.user_id
         return view(*args, **kwargs)
     return wrapped
 
@@ -66,7 +72,7 @@ def me():
 @professional_bp.get('/dashboard')
 @professional_required
 def dashboard():
-    return jsonify(serialize(professional_model.dashboard(request.user_id)))
+    return jsonify(serialize(professional_model.dashboard(request.professional_scope)))
 
 
 @professional_bp.get('/pacientes')
@@ -75,16 +81,18 @@ def patients():
     search = request.args.get('busca', '').strip()
     if len(search) > 120:
         return jsonify({'erro': 'Busca muito longa.'}), 400
-    return jsonify(serialize(professional_model.patients(request.user_id, search=search)))
+    return jsonify(serialize(professional_model.patients(request.professional_scope, search=search)))
 
 
 @professional_bp.get('/pacientes/<int:patient_id>')
 @professional_required
 def patient(patient_id):
-    rows = professional_model.patients(request.user_id, patient_id=patient_id)
+    rows = professional_model.patients(request.professional_scope, patient_id=patient_id)
     if not rows:
+        if request.current_user['role'] == 'admin':
+            return jsonify({'erro': 'Paciente não encontrado.'}), 404
         return jsonify({'erro': 'Paciente não está vinculado a este profissional.', 'codigo': 'paciente_nao_vinculado'}), 403
-    return jsonify(serialize({'paciente': rows[0], 'consultas': professional_model.appointments(request.user_id, patient_id=patient_id)}))
+    return jsonify(serialize({'paciente': rows[0], 'consultas': professional_model.appointments(request.professional_scope, patient_id=patient_id)}))
 
 
 @professional_bp.get('/consultas')
@@ -99,13 +107,13 @@ def appointments():
             start, end = week_bounds(week)
         except ValueError as error:
             return jsonify({'erro': str(error)}), 400
-        return jsonify(serialize(professional_model.appointments(request.user_id, start=start, end=end)))
+        return jsonify(serialize(professional_model.appointments(request.professional_scope, start=start, end=end)))
     if day:
         try:
             day = date.fromisoformat(day).isoformat()
         except ValueError:
             return jsonify({'erro': 'Data inválida.'}), 400
-    return jsonify(serialize(professional_model.appointments(request.user_id, day=day, history=request.args.get('historico') == '1')))
+    return jsonify(serialize(professional_model.appointments(request.professional_scope, day=day, history=request.args.get('historico') == '1')))
 
 
 @professional_bp.post('/consultas')

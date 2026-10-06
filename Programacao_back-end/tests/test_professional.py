@@ -49,7 +49,7 @@ class ProfessionalRoutesTest(unittest.TestCase):
             token = jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
             self.assertEqual(self.client.get('/profissional/me', headers={'Authorization': token}).status_code, 401)
 
-    def test_patient_admin_and_revoked_professional_denied_on_all_routes(self):
+    def test_revoked_or_mismatched_professional_profile_denied_on_all_routes(self):
         for profile in (None, {**self.profile, 'tipo': 'admin'}, {**self.profile, 'tipo': 'user'}):
             self.profile_mock.return_value = profile
             for method, route in [('GET', '/me'), ('GET', '/dashboard'), ('GET', '/pacientes'), ('GET', '/pacientes/12'), ('GET', '/consultas'), ('POST', '/consultas'), ('PATCH', '/consultas/1/status')]:
@@ -111,12 +111,49 @@ class ProfessionalRoutesTest(unittest.TestCase):
                 self.assertEqual(self.client.get('/profissional/consultas?' + query, headers=self.headers).status_code, 400)
             appointments.assert_not_called()
 
-    def test_week_cannot_be_read_by_patient_or_admin(self):
-        for role in ('paciente', 'admin'):
+    def test_week_cannot_be_read_by_patient(self):
+        for role in ('paciente',):
             self.access_mock.return_value = {**self.access, 'role': role}
             with patch.object(professional_model, 'appointments') as appointments:
                 self.assertEqual(self.client.get('/profissional/consultas?semana=2026-10-06', headers=self.headers).status_code, 403)
                 appointments.assert_not_called()
+
+    def test_admin_can_read_global_area_without_professional_profile(self):
+        self.access_mock.return_value = {**self.access, 'role': 'admin'}
+        self.profile_mock.return_value = None
+        response = self.client.get('/profissional/me', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json['tipo'], 'admin')
+        self.assertNotIn('senha', response.json)
+        self.profile_mock.assert_not_called()
+        with patch.object(professional_model, 'dashboard', return_value={'resumo': {}}) as dashboard:
+            self.assertEqual(self.client.get('/profissional/dashboard?profissional_id=8', headers=self.headers).status_code, 200)
+            dashboard.assert_called_once_with(None)
+        with patch.object(professional_model, 'patients', return_value=[{'id': 12, 'nome': 'Paciente'}]) as patients, patch.object(professional_model, 'appointments', return_value=[]) as appointments:
+            self.assertEqual(self.client.get('/profissional/pacientes?busca=Ana', headers=self.headers).status_code, 200)
+            patients.assert_called_with(None, search='Ana')
+            self.assertEqual(self.client.get('/profissional/pacientes/12', headers=self.headers).status_code, 200)
+            appointments.assert_called_with(None, patient_id=12)
+            self.assertEqual(self.client.get('/profissional/consultas?semana=2026-10-06&profissional_id=8', headers=self.headers).status_code, 200)
+            appointments.assert_called_with(None, start=date(2026, 10, 5), end=date(2026, 10, 11))
+            self.assertEqual(self.client.get('/profissional/consultas?historico=1', headers=self.headers).status_code, 200)
+            appointments.assert_called_with(None, day=None, history=True)
+            self.assertEqual(self.client.get('/profissional/consultas?data=2026-10-06', headers=self.headers).status_code, 200)
+            appointments.assert_called_with(None, day='2026-10-06', history=False)
+            patients.return_value = []
+            self.assertEqual(self.client.get('/profissional/pacientes/999', headers=self.headers).status_code, 404)
+
+    def test_admin_read_access_does_not_allow_clinical_writes_or_survive_demotion(self):
+        self.access_mock.return_value = {**self.access, 'role': 'admin'}
+        with patch.object(professional_model, 'create_appointment') as create, patch.object(professional_model, 'update_status') as update:
+            self.assertEqual(self.client.post('/profissional/consultas', headers=self.headers, json=self.appointment_data()).status_code, 403)
+            self.assertEqual(self.client.patch('/profissional/consultas/99/status', headers=self.headers, json={'status': 'confirmada'}).status_code, 403)
+            create.assert_not_called()
+            update.assert_not_called()
+        self.access_mock.return_value = {**self.access, 'role': 'paciente'}
+        self.assertEqual(self.client.get('/profissional/me', headers=self.headers).status_code, 403)
+        self.access_mock.return_value = {**self.access, 'role': 'admin', 'ativo': False}
+        self.assertEqual(self.client.get('/profissional/me', headers=self.headers).status_code, 401)
 
     def appointment_data(self):
         return {'paciente_id': 12, 'tipo': 'Consulta psicológica', 'inicio': (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(), 'profissional_id': 8}
@@ -210,6 +247,21 @@ class ProfessionalQueriesTest(unittest.TestCase):
         self.assertIn('BETWEEN %s::date AND %s::date', sql)
         self.assertEqual(params[0], 7)
         self.assertEqual(params[-3:], (start, start, end))
+
+    def test_admin_reads_all_professionals_and_revoked_relationship_history(self):
+        self.model.appointments(None, patient_id=26)
+        sql, params = self.cursor.execute.call_args.args
+        self.assertNotIn('c.profissional_id = %s', sql)
+        self.assertNotIn('AND v.ativo', sql)
+        self.assertNotIn('AND u.ativo', sql)
+        self.assertIn('pro.nome AS profissional', sql)
+        self.assertEqual(params[:2], (26, 26))
+        self.model.patients(None, search="' OR TRUE --")
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn('LEFT JOIN consultas', sql)
+        self.assertNotIn('AND u.ativo', sql)
+        self.assertNotIn("' OR TRUE --", sql)
+        self.assertEqual(params, (None, None, "' OR TRUE --"))
 
     def test_queries_bind_professional_and_patient_ids(self):
         self.model.patients(7, patient_id=26, search="' OR TRUE --")

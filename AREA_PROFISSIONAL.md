@@ -22,6 +22,7 @@ A implementação mantém a arquitetura, os contratos de login/cadastro, tarefas
 - Estados de carregamento, vazio, erro, acesso negado, sessão expirada e nova tentativa.
 - Sidebar, menu móvel, navegação por teclado, diálogo acessível e layout responsivo.
 - Login direciona profissionais habilitados à nova área. A agenda pessoal também exibe o link após confirmação do backend.
+- Administradores acessam a mesma área pelo item **Todos os atendimentos** do ADM, com visão global de pacientes, consultas, semana e histórico. Cada consulta identifica o psicólogo responsável. O perfil administrativo é mantido.
 
 Nenhum dado de demonstração integra a aplicação. As fixtures estão apenas nos testes. Idade, telefone, foto e prontuário não foram acrescentados. Tarefas pessoais, senhas e conversas do paciente não são expostas.
 
@@ -49,7 +50,7 @@ Nenhum dado de demonstração integra a aplicação. As fixtures estão apenas n
 
 ## Endpoints
 
-Todos os novos endpoints exigem JWT e perfil profissional ativo no banco:
+Todos os endpoints exigem JWT e autorização atual no banco. Leituras aceitam administradores ativos ou psicólogos com perfil habilitado; escritas clínicas exigem psicólogo habilitado:
 
 | Método | Rota | Resultado |
 | --- | --- | --- |
@@ -67,9 +68,9 @@ Todos os novos endpoints exigem JWT e perfil profissional ativo no banco:
 
 ## Autorização e privacidade
 
-O JWT fornece identidade, expiração e versão de sessão. Cada requisição consulta `usuarios` e exige conta ativa, role atual `psicologo` e `perfil_profissional_ativo` na mesma linha. Pacientes e administradores não recebem acesso profissional. O cadastro público cria somente pacientes e ignora campos de papel enviados pelo cliente. Bloqueios invalidam a versão dos tokens antigos, inclusive após reativação.
+O JWT fornece identidade, expiração e versão de sessão. Cada requisição consulta `usuarios` e exige conta ativa. Psicólogos precisam de role atual `psicologo` e `perfil_profissional_ativo` na mesma linha. Administradores ativos possuem acesso global de leitura, sem precisar de CRP, perfil profissional ou vínculo. Pacientes não recebem acesso à área. O cadastro público cria somente pacientes e ignora campos de papel enviados pelo cliente. Bloqueios invalidam a versão dos tokens antigos, inclusive após reativação.
 
-O servidor obtém o profissional do JWT, não do corpo ou da URL. Todas as consultas SQL usam esse ID; detalhes, consultas, resumos, agendamentos e alterações de status exigem vínculo ativo em `profissional_pacientes` e paciente ativo. Encerrar um vínculo preserva a linha e os históricos, mas recusa novos acessos com o mesmo JWT imediatamente após a transação. O profissional não pode listar todos os usuários nem criar vínculos via HTTP. Respostas têm `Cache-Control: no-store`, e falhas de banco não retornam detalhes de conexão. Conteúdos da interface são escapados antes da renderização.
+O servidor define o escopo pela identidade autenticada, nunca pelo corpo ou pela URL. Para psicólogos, as consultas SQL usam seu ID; detalhes, consultas, resumos, agendamentos e alterações de status exigem vínculo ativo em `profissional_pacientes` e paciente ativo. Encerrar um vínculo preserva a linha e os históricos, mas recusa novos acessos profissionais com o mesmo JWT imediatamente após a transação. Para administradores, as leituras incluem todos os profissionais e também históricos de vínculos encerrados e contas bloqueadas. Criar consultas e mudar status continuam sendo ações do psicólogo; o ADM mantém a gestão de contas e vínculos em sua própria área. Respostas têm `Cache-Control: no-store`, e falhas de banco não retornam detalhes de conexão. Conteúdos da interface são escapados antes da renderização.
 
 Como o frontend é estático, `profissional.html` entrega somente a estrutura pública, sem dados embutidos. O painel só é exibido após `/profissional/me`; todas as informações e ações privadas ficam protegidas no backend, inclusive se alguém ignorar o JavaScript. Não é uma rota Flask de HTML com sessão em cookie.
 
@@ -123,6 +124,10 @@ python -m http.server 5500 --directory Programacao_front-end
 - Estados finalizados/cancelados não podem ser reabertos neste módulo.
 
 ## Validação
+
+### Leitura global do administrador
+
+76 testes de backend passaram, incluindo acesso administrativo sem perfil profissional, escopo global definido pelo servidor, bloqueio/demissão do ADM, preservação do escopo do psicólogo e recusa de escritas clínicas pelo ADM. Os testes de navegador verificaram a entrada pelo menu administrativo, consultas de vários profissionais, pacientes sem vínculo e contas bloqueadas, filtro por dia, histórico, perfil administrativo, retorno ao ADM e quatro larguras. As consultas globais foram executadas no banco configurado em transação somente leitura, e a conta administrativa indicada permaneceu ativa, sem alteração de credenciais.
 
 ### Visão semanal
 

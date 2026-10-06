@@ -24,7 +24,7 @@ appointments = [
     {'id': 72, 'paciente_id': 13, 'paciente': '<img src=x onerror=alert(1)>', 'inicio': '2026-10-07T03:30:00+00:00', 'tipo': 'Retorno', 'status': 'confirmada'},
     {'id': 73, 'paciente_id': 14, 'paciente': 'Marcos Silva', 'inicio': '2026-10-11T14:00:00+00:00', 'tipo': 'Retorno', 'status': 'agendada'},
 ]
-state = {'weekly_status': 200, 'professional_status': 200, 'hold': None}
+state = {'weekly_status': 200, 'professional_status': 200, 'hold': None, 'role': 'psicologo'}
 errors, held, requests = [], [], []
 HEADERS = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type',
            'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS'}
@@ -92,7 +92,11 @@ def handle(route):
             task['completed'] = payload['completed']
         status = 204
     elif url.path == '/profissional/me':
-        data = {'id': 7, 'nome': 'Luiza Costa', 'tipo': 'psicologo', 'registro': 'CRP teste', 'especialidade': 'Psicologia', 'email': 'luiza@example.test'}
+        data = {'id': 7, 'nome': 'Luiza Costa', 'tipo': state['role'], 'registro': 'CRP teste', 'especialidade': 'Psicologia', 'email': 'luiza@example.test'}
+    elif url.path == '/admin/me':
+        data = {'id': 7, 'nome': 'Luiza Costa', 'role': 'admin', 'email': 'luiza@example.test'}
+    elif url.path == '/admin/dashboard':
+        data = {'resumo': {}, 'auditoria': []}
     elif url.path == '/profissional/dashboard':
         data = {'resumo': {'hoje': 1, 'proximos': 3, 'pacientes': 3, 'realizados': 0}, 'hoje': appointments[:1], 'proximos': appointments}
     elif url.path.endswith('/status'):
@@ -104,6 +108,15 @@ def handle(route):
         anchor = date.fromisoformat(query.get('semana', ['2026-10-06'])[0])
         start = anchor - timedelta(days=anchor.weekday())
         data = [row for row in appointments if start <= date.fromisoformat(row['inicio'][:10]) <= start + timedelta(days=6)]
+        if query.get('historico') == ['1']:
+            data = [row for row in data if row['status'] == 'finalizada']
+        if query.get('data'):
+            data = [row for row in data if row['inicio'][:10] == query['data'][0]]
+    elif url.path == '/profissional/pacientes':
+        data = [{'id': row['paciente_id'], 'nome': row['paciente'], 'ativo': True,
+                 'ultimo_atendimento': None, 'proximo_atendimento': None} for row in appointments]
+        data.append({'id': 16, 'nome': 'Paciente sem vínculo', 'ativo': False,
+                     'ultimo_atendimento': None, 'proximo_atendimento': None})
     elif url.path.startswith('/profissional/pacientes/'):
         patient_id = int(url.path.rsplit('/', 1)[1])
         rows = [row for row in appointments if row['paciente_id'] == patient_id]
@@ -218,7 +231,51 @@ with sync_playwright() as p:
         page.set_viewport_size({'width': width, 'height': 1000})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), width
         page.screenshot(path=str(ARTIFACTS / ('professional-week-' + str(width) + '.png')), full_page=True)
+
+    # O ADM abre o mesmo espaço com dados globais, mantendo seu perfil e sem ações clínicas.
+    state['role'] = 'admin'
+    for index, row in enumerate(appointments):
+        row['profissional'] = 'Psicóloga Luiza' if index == 0 else 'Psicólogo Rafael'
+        row['profissional_id'] = 7 if index == 0 else 8
+    appointments[2]['status'] = 'finalizada'
+    page.set_viewport_size({'width': 1440, 'height': 1000})
+    page.goto(ORIGIN + '/admin.html')
+    page.get_by_role('link', name='Todos os atendimentos', exact=True).click()
+    expect(page.locator('#backToAdmin')).to_be_visible()
+    expect(page.locator('.privacy-note')).to_have_text('Visão de todos os atendimentos. Horários de Brasília.')
+    page.get_by_role('link', name='Ver atendimentos da semana', exact=True).click()
+    page.locator('#professionalWeekDate').fill('2026-10-06')
+    expect(page.get_by_role('heading', name='Semana de todos os atendimentos', exact=True)).to_be_visible()
+    expect(page.locator('#pageContent')).to_contain_text('Psicóloga Luiza')
+    expect(page.locator('#pageContent')).to_contain_text('Psicólogo Rafael')
+    expect(page.locator('[data-appointment]')).to_have_count(0)
+    expect(page.get_by_role('link', name='Agendar consulta', exact=True)).to_have_count(0)
+    page.get_by_role('button', name='Ana Oliveira', exact=True).click()
+    expect(page.get_by_role('dialog')).to_be_visible()
+    expect(page.locator('#patientDetails')).to_contain_text('Histórico com todos os profissionais.')
+    expect(page.locator('#patientDetails')).to_contain_text('Psicóloga Luiza')
+    page.locator('#closePatient').click()
+    page.get_by_role('link', name='Agenda / Consultas', exact=True).click()
+    expect(page.locator('#newAppointment')).to_have_count(0)
+    expect(page.get_by_role('columnheader', name='Psicólogo', exact=True)).to_be_visible()
+    page.locator('#appointmentDate').fill('2026-10-11')
+    page.get_by_role('button', name='Filtrar', exact=True).click()
+    expect(page.locator('#appointmentsResult tbody tr')).to_have_count(1)
+    page.get_by_role('link', name='Pacientes', exact=True).click()
+    expect(page.locator('#pageContent')).to_contain_text('Paciente sem vínculo')
+    expect(page.locator('#pageContent')).to_contain_text('Bloqueada')
+    page.get_by_role('link', name='Atendimentos', exact=True).click()
+    expect(page.locator('#pageContent')).to_contain_text('Marcos Silva')
+    page.get_by_role('link', name='Perfil', exact=True).click()
+    expect(page.locator('#pageContent')).to_contain_text('Administrador(a)')
+    page.get_by_role('link', name='Semana de atendimentos', exact=True).click()
+    expect(page.get_by_role('heading', name='Semana de todos os atendimentos', exact=True)).to_be_visible()
+    expect(page.locator('.consultation-card')).to_have_count(3)
+    for width in (1440, 768, 390, 320):
+        page.set_viewport_size({'width': width, 'height': 1000})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), width
+        page.screenshot(path=str(ARTIFACTS / ('admin-professional-week-' + str(width) + '.png')), full_page=True)
     assert not errors, errors
     browser.close()
-    print('OK: semana do paciente e psicólogo, edição entre dias, virada de ano, ano bissexto, fuso de Brasília, status, pacientes, XSS, erro/retry, resposta atrasada e 1440/768/390/320; sem erros JavaScript.')
+    print('OK: semana do paciente e psicólogo; ADM acessa todas as consultas, pacientes e histórico; edição, fuso, status, XSS, erro/retry e 1440/768/390/320; sem erros JavaScript.')
     print('Capturas:', ARTIFACTS)

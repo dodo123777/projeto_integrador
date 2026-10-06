@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(`${base}/sessao`, { headers: { Authorization: token }, cache: 'no-store' })
             .then(async response => response.ok ? response.json() : Promise.reject())
             .then(data => {
-                if (professionalLink) professionalLink.hidden = data.role !== 'psicologo';
+                if (professionalLink) professionalLink.hidden = !['psicologo', 'admin'].includes(data.role);
                 if (adminLink) adminLink.hidden = data.role !== 'admin';
             })
             .catch(() => {

@@ -25,6 +25,7 @@ O frontend recebe `role` e `destino` calculados pelo servidor após o login. Par
 - Promoção de pacientes ativos para psicólogo, mantendo o mesmo usuário e preenchendo CRP/especialidade.
 - Bloqueio/reativação lógica, com revogação de sessões anteriores ao bloqueio.
 - Lista e detalhes de psicólogos, edição de CRP/especialidade/habilitação do perfil, pacientes vinculados e busca de candidatos.
+- **Todos os atendimentos:** abre `profissional.html` com visão global das consultas, agenda semanal, pacientes e histórico, identificando o psicólogo em cada consulta. Mantém o perfil ADM e não exige habilitação como psicólogo. Contas bloqueadas e vínculos encerrados continuam visíveis nessa leitura administrativa. Não exige migração.
 - Criação e encerramento de vínculos, com confirmações e feedback visual.
 - Auditoria transacional: a alteração e seu registro são confirmados juntos; falha na auditoria desfaz a alteração.
 - Proteção contra bloqueio da própria conta e do último administrador ativo.
@@ -54,7 +55,7 @@ Modificados nesta evolução:
 - `Programacao_back-end/models/user.py`: cadastro paciente e contexto de acesso atual.
 - `Programacao_back-end/controllers/user_controller.py`: valida entradas, recusa contas bloqueadas e fornece destino por role; adiciona `/sessao`.
 - `Programacao_back-end/controllers/task_controller.py`: passa a usar a mesma autenticação com verificação de conta ativa.
-- `Programacao_back-end/controllers/professional_controller.py` e `models/professional.py`: exigem role atual e vínculo ativo também nas leituras, resumos, criação de consultas e alterações de status.
+- `Programacao_back-end/controllers/professional_controller.py` e `models/professional.py`: verificam a role atual; psicólogos precisam de vínculo ativo, enquanto administradores recebem leitura global. Criação de consultas e alterações de status continuam restritas ao profissional responsável.
 - `Programacao_back-end/professional_commands.py`: comandos antigos exigem uma conta administrativa ativa para autorizar/auditar operações; não promovem ou revogam administradores.
 - `Programacao_front-end/index.html`, `static/js/login.js` e `static/js/auth.js`: navegação por role e link administrativo.
 - `Programacao_front-end/chat.html` e `static/js/chat.js`: sanitização das respostas Markdown com DOMPurify e fallback seguro em texto.

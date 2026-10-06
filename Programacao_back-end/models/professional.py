@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 
 class ProfessionalModel:
-    """Consultas sempre limitadas ao profissional autenticado, nunca ao ID do cliente."""
+    """Escopo definido pelo servidor: ID do psicólogo ou None para leitura administrativa."""
 
     def __init__(self):
         self.db = db_manager
@@ -24,6 +24,17 @@ class ProfessionalModel:
         return rows[0] if rows else None
 
     def patients(self, professional_id, patient_id=None, search=''):
+        if professional_id is None:
+            return self._rows('''
+                SELECT u.id, u.nome, u.ativo,
+                    MAX(c.inicio) FILTER (WHERE c.status = 'finalizada') AS ultimo_atendimento,
+                    MIN(c.inicio) FILTER (WHERE c.inicio >= CURRENT_TIMESTAMP
+                        AND c.status IN ('agendada', 'confirmada', 'em_atendimento')) AS proximo_atendimento
+                FROM usuarios u LEFT JOIN consultas c ON c.paciente_id = u.id
+                WHERE u.role = 'paciente' AND (%s::bigint IS NULL OR u.id = %s)
+                    AND strpos(lower(u.nome), lower(%s)) > 0
+                GROUP BY u.id, u.nome, u.ativo ORDER BY lower(u.nome), u.id
+            ''', (patient_id, patient_id, search))
         return self._rows('''
             SELECT u.id, u.nome,
                 MAX(c.inicio) FILTER (WHERE c.status = 'finalizada') AS ultimo_atendimento,
@@ -38,21 +49,36 @@ class ProfessionalModel:
         ''', (professional_id, patient_id, patient_id, search))
 
     def appointments(self, professional_id, patient_id=None, day=None, history=False, upcoming=False, start=None, end=None):
-        return self._rows('''
-            SELECT c.id, c.paciente_id, u.nome AS paciente, c.inicio, c.tipo, c.status
+        scoped = professional_id is not None
+        scope = "c.profissional_id = %s AND v.ativo AND u.ativo AND u.role = 'paciente'" if scoped else 'TRUE'
+        params = (professional_id,) if scoped else ()
+        return self._rows(f'''
+            SELECT c.id, c.paciente_id, u.nome AS paciente, c.inicio, c.tipo, c.status,
+                c.profissional_id, pro.nome AS profissional
             FROM consultas c JOIN usuarios u ON u.id = c.paciente_id
+            JOIN usuarios pro ON pro.id = c.profissional_id
             JOIN profissional_pacientes v ON v.profissional_id = c.profissional_id AND v.paciente_id = c.paciente_id
-            WHERE c.profissional_id = %s AND v.ativo AND u.ativo AND u.role = 'paciente'
-                AND (%s IS NULL OR c.paciente_id = %s)
-                AND (%s IS NULL OR (c.inicio AT TIME ZONE 'America/Sao_Paulo')::date = %s::date)
+            WHERE {scope}
+                AND (%s::bigint IS NULL OR c.paciente_id = %s)
+                AND (%s::date IS NULL OR (c.inicio AT TIME ZONE 'America/Sao_Paulo')::date = %s::date)
                 AND (NOT %s OR c.status = 'finalizada')
                 AND (NOT %s OR (c.inicio >= CURRENT_TIMESTAMP AND c.status IN ('agendada', 'confirmada', 'em_atendimento')))
                 AND (%s::date IS NULL OR (c.inicio AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN %s::date AND %s::date)
             ORDER BY c.inicio, c.id
-        ''', (professional_id, patient_id, patient_id, day, day, history, upcoming, start, start, end))
+        ''', params + (patient_id, patient_id, day, day, history, upcoming, start, start, end))
 
     def dashboard(self, professional_id):
-        summary = self._rows('''
+        if professional_id is None:
+            summary = self._rows('''
+                SELECT COUNT(*) FILTER (WHERE (inicio AT TIME ZONE 'America/Sao_Paulo')::date =
+                        (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date AND status <> 'cancelada') AS hoje,
+                    COUNT(*) FILTER (WHERE inicio >= CURRENT_TIMESTAMP AND status IN ('agendada', 'confirmada', 'em_atendimento')) AS proximos,
+                    COUNT(*) FILTER (WHERE status = 'finalizada') AS realizados,
+                    (SELECT COUNT(*) FROM usuarios WHERE role = 'paciente') AS pacientes
+                FROM consultas
+            ''', ())[0]
+        else:
+            summary = self._rows('''
             SELECT COUNT(*) FILTER (WHERE (inicio AT TIME ZONE 'America/Sao_Paulo')::date =
                     (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date AND status <> 'cancelada') AS hoje,
                 COUNT(*) FILTER (WHERE inicio >= CURRENT_TIMESTAMP AND status IN ('agendada', 'confirmada', 'em_atendimento')) AS proximos,
@@ -63,7 +89,7 @@ class ProfessionalModel:
                 ON v.profissional_id = c.profissional_id AND v.paciente_id = c.paciente_id
             JOIN usuarios u ON u.id = c.paciente_id
             WHERE c.profissional_id = %s AND v.ativo AND u.ativo AND u.role = 'paciente'
-        ''', (professional_id, professional_id))[0]
+            ''', (professional_id, professional_id))[0]
         today = datetime.now(ZoneInfo('America/Sao_Paulo')).date().isoformat()
         return {'resumo': summary, 'proximos': self.appointments(professional_id, upcoming=True)[:6],
                 'hoje': [row for row in self.appointments(professional_id, day=today) if row['status'] != 'cancelada']}
