@@ -2,6 +2,64 @@
 
 final result: passed
 
+## Revisão vigente — layout compacto e imagem de fundo
+
+Referência: screenshot do usuário na conversa, com muito espaço entre os
+elementos e cadastro abaixo da área visível. Comparação normalizada da versão
+anterior: `/private/tmp/infohelp-auth-compact/source-login-notebook.png`.
+Implementação: `/private/tmp/infohelp-auth-compact/login-1440x650.png`.
+Ambas as capturas: 1440 × 650 px, viewport CSS 1440 × 650,
+deviceScaleFactor 1, sem recorte ou redimensionamento; login sem sessão e
+campos vazios para igualar o estado sem reproduzir credenciais da captura enviada.
+
+As duas imagens foram abertas juntas no mesmo input visual. [P2] O layout
+anterior deixa a ação de criar conta abaixo da dobra nesse tamanho. Correção:
+apresentação e formulário agora compartilham um cartão de 920 px, com distância
+menor entre colunas, cabeçalho de 64 px e espaçamento próprio para telas baixas.
+Na captura revisada, entrar e criar conta aparecem por inteiro. O teste verifica
+automaticamente a posição do botão de cadastro em notebooks, incluindo 650 px
+de altura. Não restam achados P0/P1/P2 nesta comparação.
+
+Fundo: `Programacao_front-end/static/images/auth-background.jpg`, gerado com
+ImageGen e codificado em JPEG (266 KiB). Prompt e procedência em
+`Programacao_front-end/static/images/auth-background.md`. Fotografia decorativa
+de plantas e luz natural, com camada suave e cartão quase opaco sobre ela;
+campos e textos permanecem legíveis. Há cor de fundo alternativa para falha
+no carregamento da imagem.
+
+Superfícies verificadas nesta revisão:
+
+- **Tipografia:** Inter/system-ui preservada, título menor e rótulos legíveis;
+  sem cortes de texto. Google Fonts continua bloqueado nos testes isolados.
+- **Espaçamento:** cartão único, separador entre apresentação e formulário;
+  margens menores, botões presentes acima da dobra no notebook. No celular,
+  uma coluna e rolagem vertical quando necessária.
+- **Cores:** azul-petróleo e teal preservados; fotografia em tons naturais suaves.
+  Formulário protegido por fundo branco com 96% de opacidade.
+- **Imagens:** foto gerada inspecionada, sem texto, marcas ou pessoas; logo UNISAL
+  original com proporção preservada e espaço transparente vertical recortado
+  apenas pela caixa CSS do cabeçalho.
+- **Conteúdo:** mensagens humanas e instruções do fluxo anterior preservadas.
+  Recuperação continua informando a indisponibilidade real do serviço.
+
+Outras capturas no diretório `/private/tmp/infohelp-auth-compact`:
+`login-1366x768.png` (1366 × 768), `login-touch-mobile.png` (390 × 856,
+viewport 390 × 844), `register-320x740.png` (320 × 763, viewport 320 × 740),
+`reset-390x844.png` (390 × 844). Capturas móveis incluem página inteira em
+densidade 1. Os controles são legíveis em escala 1:1 nessas imagens; não foi
+necessário recorte adicional. Comparação entre a foto e o resultado confirma
+que o fundo é a imagem real gerada, sem substituição por formas CSS.
+
+`browser_auth.py` passou: sete tamanhos de viewport, layout sem overflow
+horizontal, navegação, cadastro, senha visível, erros/sucesso, três destinos de
+acesso e preservação/expiração da sessão. Sem erros JavaScript. Testes anteriores
+de administrador/profissional constam abaixo; não foram repetidos porque esta
+revisão altera o CSS, o ativo visual e a cobertura de layout, sem modificar
+a lógica de autenticação.
+
+As seções seguintes documentam as revisões anteriores, com seus próprios
+arquivos e dimensões, e não substituem esta comparação vigente.
+
 Referência visual: `/private/tmp/infohelp-auth-review/source-agenda-desktop.png`.
 Implementação inicial: `/private/tmp/infohelp-auth-review/login-1440.png`,
 `login-touch-mobile.png`, `register-320.png` e `reset-390.png` no mesmo diretório.

@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[2] / 'Programacao_front-end'
-ARTIFACTS = Path('/private/tmp/infohelp-auth-review')
+ARTIFACTS = Path(os.environ.get('AUTH_BROWSER_ARTIFACTS', '/private/tmp/infohelp-auth-review'))
 ARTIFACTS.mkdir(exist_ok=True)
 ASSETS = Path(os.environ.get('BROWSER_ASSETS_DIR', '/private/tmp/infohelp-map-assets'))
 ORIGIN = 'http://localhost:5500'
@@ -138,7 +138,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(ARTIFACTS / 'register-success-desktop.png'))
 
     # Mesmos estados em telas largas, tablet e celular estreito.
-    for width, height in [(1440, 1000), (1024, 768), (768, 1024), (390, 844), (320, 740)]:
+    for width, height in [(1440, 1000), (1440, 650), (1366, 768), (1024, 768), (768, 1024), (390, 844), (320, 740)]:
         page.set_viewport_size({'width': width, 'height': height})
         page.reload()
         for panel in ('login', 'register', 'reset'):
@@ -149,7 +149,10 @@ with sync_playwright() as p:
                 page.locator('#openResetBtn').click()
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, panel)
             expect(page.locator('#' + panel + 'Form')).to_be_visible()
-            page.screenshot(path=str(ARTIFACTS / (panel + '-' + str(width) + '.png')), full_page=True)
+            if panel == 'login' and width > 820:
+                button = page.locator('#openRegisterBtn').bounding_box()
+                assert button['y'] + button['height'] <= height, 'Login e cadastro devem caber sem rolagem no notebook'
+            page.screenshot(path=str(ARTIFACTS / (panel + '-' + str(width) + 'x' + str(height) + '.png')), full_page=True)
 
     for destination in ('index.html', 'admin.html', 'profissional.html'):
         state['login'], state['destination'] = 200, destination
@@ -185,5 +188,5 @@ with sync_playwright() as p:
     touch.screenshot(path=str(ARTIFACTS / 'login-touch-mobile.png'), full_page=True)
     assert not errors, errors
     browser.close()
-    print('OK: login/cadastro por Enter, validações, senha visível, foco, requisição única, erros, sucesso sem alert, navegação, três perfis, sessão 503/401 e layout 1440/1024/768/390/320; sem erros JavaScript.')
+    print('OK: login/cadastro por Enter, validações, senha visível, foco, requisição única, erros, sucesso sem alert, navegação, três perfis, sessão 503/401 e layout 320 a 1440, incluindo notebook com 650 px de altura; sem erros JavaScript.')
     print('Screenshots:', ARTIFACTS)
