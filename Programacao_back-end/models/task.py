@@ -62,6 +62,17 @@ class TaskModel:
         self.db.commit()
         return cur.rowcount > 0
 
+    def list_week(self, user_id, start, end):
+        with self.db.get_cursor() as cur:
+            cur.execute('''
+                SELECT id, texto, horario, deadline, concluida, data
+                FROM tarefas WHERE usuario_id = %s AND data BETWEEN %s AND %s
+                ORDER BY data, horario, id
+            ''', (user_id, start, end))
+            return [{'id': row[0], 'text': row[1], 'time': str(row[2]),
+                     'deadline': str(row[3]), 'completed': row[4],
+                     'date': row[5].isoformat()} for row in cur.fetchall()]
+
     def toggle_task(self, task_id, user_id, completed):
         cur = self.db.get_cursor()
         cur.execute("UPDATE tarefas SET concluida = %s WHERE id = %s AND usuario_id = %s", 

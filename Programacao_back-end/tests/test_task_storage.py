@@ -1,6 +1,7 @@
 """Transações de repetição, escopo de edição e diagnóstico sem banco real."""
 import threading
 import unittest
+from datetime import date, time
 from unittest.mock import MagicMock, patch
 
 import psycopg2
@@ -25,6 +26,15 @@ class TaskStorageTest(unittest.TestCase):
         ])
         self.model.db.commit.assert_called_once()
         self.model.db.rollback.assert_not_called()
+
+    def test_week_query_is_bounded_scoped_and_serializes_dates(self):
+        self.cursor.fetchall.return_value = [(41, 'Ler', time(9), time(10), False, date(2026, 10, 6))]
+        tasks = self.model.list_week(12, date(2026, 10, 5), date(2026, 10, 11))
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn('usuario_id = %s AND data BETWEEN %s AND %s', sql)
+        self.assertEqual(params, (12, date(2026, 10, 5), date(2026, 10, 11)))
+        self.assertEqual(tasks[0]['date'], '2026-10-06')
+        self.assertEqual(tasks[0]['time'], '09:00:00')
 
     def test_failure_in_later_occurrence_rolls_back_everything(self):
         self.cursor.execute.side_effect = [None, psycopg2.OperationalError()]

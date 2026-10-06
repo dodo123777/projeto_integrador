@@ -2,7 +2,7 @@
 import io
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import bcrypt
@@ -100,6 +100,24 @@ class ProfessionalRoutesTest(unittest.TestCase):
             self.assertEqual(self.client.get('/profissional/consultas?data=2026-09-20&historico=1', headers=self.headers).status_code, 200)
             appointments.assert_called_once_with(7, day='2026-09-20', history=True)
 
+    def test_week_uses_authenticated_professional_and_calendar_bounds(self):
+        with patch.object(professional_model, 'appointments', return_value=[]) as appointments:
+            response = self.client.get('/profissional/consultas?semana=2027-01-01&profissional_id=8', headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers['Cache-Control'], 'no-store')
+            appointments.assert_called_once_with(7, start=date(2026, 12, 28), end=date(2027, 1, 3))
+        with patch.object(professional_model, 'appointments') as appointments:
+            for query in ('semana=2026-02-30', 'semana=', 'semana=9999-12-31', 'semana=2026-10-05&data=2026-10-06', 'semana=2026-10-05&historico=1'):
+                self.assertEqual(self.client.get('/profissional/consultas?' + query, headers=self.headers).status_code, 400)
+            appointments.assert_not_called()
+
+    def test_week_cannot_be_read_by_patient_or_admin(self):
+        for role in ('paciente', 'admin'):
+            self.access_mock.return_value = {**self.access, 'role': role}
+            with patch.object(professional_model, 'appointments') as appointments:
+                self.assertEqual(self.client.get('/profissional/consultas?semana=2026-10-06', headers=self.headers).status_code, 403)
+                appointments.assert_not_called()
+
     def appointment_data(self):
         return {'paciente_id': 12, 'tipo': 'Consulta psicológica', 'inicio': (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(), 'profissional_id': 8}
 
@@ -182,6 +200,16 @@ class ProfessionalQueriesTest(unittest.TestCase):
         self.cursor = self.model.db.get_cursor.return_value.__enter__.return_value
         self.cursor.description = [('id',)]
         self.cursor.fetchall.return_value = []
+
+    def test_week_query_keeps_links_and_brasilia_date_boundaries(self):
+        start, end = date(2026, 10, 5), date(2026, 10, 11)
+        self.model.appointments(7, start=start, end=end)
+        sql, params = self.cursor.execute.call_args.args
+        self.assertIn('c.profissional_id = %s AND v.ativo', sql)
+        self.assertIn("AT TIME ZONE 'America/Sao_Paulo'", sql)
+        self.assertIn('BETWEEN %s::date AND %s::date', sql)
+        self.assertEqual(params[0], 7)
+        self.assertEqual(params[-3:], (start, start, end))
 
     def test_queries_bind_professional_and_patient_ids(self):
         self.model.patients(7, patient_id=26, search="' OR TRUE --")

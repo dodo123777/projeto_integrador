@@ -1,4 +1,6 @@
 from database import db_manager
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 class ProfessionalModel:
@@ -35,7 +37,7 @@ class ProfessionalModel:
             GROUP BY u.id, u.nome ORDER BY lower(u.nome), u.id
         ''', (professional_id, patient_id, patient_id, search))
 
-    def appointments(self, professional_id, patient_id=None, day=None, history=False, upcoming=False):
+    def appointments(self, professional_id, patient_id=None, day=None, history=False, upcoming=False, start=None, end=None):
         return self._rows('''
             SELECT c.id, c.paciente_id, u.nome AS paciente, c.inicio, c.tipo, c.status
             FROM consultas c JOIN usuarios u ON u.id = c.paciente_id
@@ -45,8 +47,9 @@ class ProfessionalModel:
                 AND (%s IS NULL OR (c.inicio AT TIME ZONE 'America/Sao_Paulo')::date = %s::date)
                 AND (NOT %s OR c.status = 'finalizada')
                 AND (NOT %s OR (c.inicio >= CURRENT_TIMESTAMP AND c.status IN ('agendada', 'confirmada', 'em_atendimento')))
+                AND (%s::date IS NULL OR (c.inicio AT TIME ZONE 'America/Sao_Paulo')::date BETWEEN %s::date AND %s::date)
             ORDER BY c.inicio, c.id
-        ''', (professional_id, patient_id, patient_id, day, day, history, upcoming))
+        ''', (professional_id, patient_id, patient_id, day, day, history, upcoming, start, start, end))
 
     def dashboard(self, professional_id):
         summary = self._rows('''
@@ -61,7 +64,9 @@ class ProfessionalModel:
             JOIN usuarios u ON u.id = c.paciente_id
             WHERE c.profissional_id = %s AND v.ativo AND u.ativo AND u.role = 'paciente'
         ''', (professional_id, professional_id))[0]
-        return {'resumo': summary, 'proximos': self.appointments(professional_id, upcoming=True)[:6]}
+        today = datetime.now(ZoneInfo('America/Sao_Paulo')).date().isoformat()
+        return {'resumo': summary, 'proximos': self.appointments(professional_id, upcoming=True)[:6],
+                'hoje': [row for row in self.appointments(professional_id, day=today) if row['status'] != 'cancelada']}
 
     def create_appointment(self, professional_id, patient_id, start, kind):
         try:

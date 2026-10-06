@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request, current_app
 
 from auth import auth_required
 from models.professional import ProfessionalModel
+from calendar_dates import week_bounds
 
 
 professional_bp = Blueprint('professional', __name__, url_prefix='/profissional')
@@ -90,6 +91,15 @@ def patient(patient_id):
 @professional_required
 def appointments():
     day = request.args.get('data') or None
+    week = request.args.get('semana')
+    if week is not None:
+        if day or request.args.get('historico') == '1':
+            return jsonify({'erro': 'Escolha o filtro por dia ou por semana.'}), 400
+        try:
+            start, end = week_bounds(week)
+        except ValueError as error:
+            return jsonify({'erro': str(error)}), 400
+        return jsonify(serialize(professional_model.appointments(request.user_id, start=start, end=end)))
     if day:
         try:
             day = date.fromisoformat(day).isoformat()

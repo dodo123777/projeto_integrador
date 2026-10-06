@@ -31,7 +31,7 @@ class ProgressManager {
     }
 
     showCongrats() {
-        if (document.body.classList.contains('focus-mode')) {
+        if (document.body.classList.contains('focus-mode') || document.body.classList.contains('week-view')) {
             return;
         }
         this.congratsMessage.style.display = "block";

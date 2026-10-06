@@ -1,6 +1,6 @@
 # InfoHelp
 
-Agenda de tarefas com progresso diário, gráficos, chat de organização, clínicas próximas e áreas profissional e administrativa.
+Agenda de tarefas com visões diária e semanal, progresso diário, gráficos, chat de organização, clínicas próximas e áreas profissional e administrativa.
 
 ## Executar localmente
 
@@ -25,6 +25,8 @@ Abra [a tela de login](http://localhost:5500/login.html). O banco Supabase preci
 
 ## Tarefas
 
+- **Dia / Semana:** alterne entre a lista diária e os sete dias de segunda a domingo. Navegue entre semanas ou volte à semana atual; clique no nome de um dia para abrir sua lista. É possível concluir, editar e excluir tarefas diretamente na semana. O progresso e os gráficos continuam referentes ao dia selecionado.
+- `GET /tarefas/semana?date=AAAA-MM-DD` retorna o intervalo da semana e seus sete dias, incluindo os vazios, apenas com tarefas da conta autenticada. As datas usam o calendário de Brasília. Não exige nova migração.
 - **Editar:** altera texto, dia e horários de uma ocorrência. O estado de conclusão é preservado.
 - **Repetir:** escolha diariamente ou semanalmente e uma data final. O primeiro dia é incluído. São permitidas até 90 ocorrências por cadastro, dentro dos próximos 365 dias a partir do dia inicial.
 - As repetições são tarefas independentes, criadas em uma única transação: se uma falhar, nenhuma é salva. Editar ou remover uma ocorrência mantém as demais.
@@ -55,6 +57,7 @@ Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_patient
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_task_resilience.py
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_clinics.py
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_professional.py
+Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_weekly.py
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_admin.py
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_auth.py
 ```

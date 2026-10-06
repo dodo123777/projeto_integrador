@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
         <link rel="stylesheet" href="./static/css/style.css">
+        <link rel="stylesheet" href="./static/css/calendar.css">
     </head>
     <body class="agenda-page min-vh-100">
         <header class="app-header">
@@ -95,8 +96,22 @@
                     </section>
 
                     <section class="daily-tasks card p-3" aria-labelledby="tasksTitle">
-                        <h2 class="section-title mb-0 fw-bold" id="tasksTitle">Tarefas do dia</h2>
-                        <p class="helper-text mb-0">Conclua, adie ou remova sem perder de vista o que é prioridade.</p>
+                        <div class="calendar-heading">
+                            <h2 class="section-title mb-0 fw-bold" id="tasksTitle">Tarefas do dia</h2>
+                            <div class="calendar-switch" role="group" aria-label="Ver tarefas por dia ou semana">
+                                <button type="button" id="dayViewButton" aria-pressed="true">Dia</button>
+                                <button type="button" id="weekViewButton" aria-pressed="false">Semana</button>
+                            </div>
+                        </div>
+                        <p class="helper-text mb-0" id="tasksDescription">Conclua, adie ou remova sem perder de vista o que é prioridade.</p>
+                        <div class="week-navigation" id="taskWeekNav" hidden>
+                            <p class="week-range" id="taskWeekRange"></p>
+                            <div class="week-buttons">
+                                <button type="button" class="btn ghost-btn" id="previousTaskWeek" aria-label="Semana anterior"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                                <button type="button" class="btn ghost-btn" id="currentTaskWeek">Esta semana</button>
+                                <button type="button" class="btn ghost-btn" id="nextTaskWeek" aria-label="Próxima semana"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                            </div>
+                        </div>
                         <p id="taskLoadStatus" class="helper-text mt-2 mb-0" role="status" aria-live="polite"></p>
                         <button type="button" id="retryTasksButton" class="btn ghost-btn mt-2" hidden>Tentar carregar novamente</button>
                         <div class="task-list-container w-100 overflow-y-auto mt-3 p-3">
@@ -224,6 +239,7 @@
         <script src="./static/js/auth.js"></script>
         <script src="./static/js/fireworks.js"></script>
         <script src="./static/js/progress.js"></script>
+        <script src="./static/js/calendar.js"></script>
         <script src="./static/js/tasks.js"></script>
         <script src="./static/js/clinics.js"></script>
     </body>

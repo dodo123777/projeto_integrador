@@ -15,6 +15,7 @@ A implementação mantém a arquitetura, os contratos de login/cadastro, tarefas
 ## Funcionalidades
 
 - Início com consultas de hoje, próximas consultas, pacientes vinculados e total finalizado.
+- Minha semana com os sete dias de segunda a domingo, navegação entre semanas, detalhes de pacientes vinculados e mudanças de status. Datas e horários são exibidos no fuso de Brasília. O início destaca os atendimentos de hoje e oferece acesso direto à semana.
 - Pacientes com busca por nome, último/próximo atendimento e detalhes das consultas com o profissional atual.
 - Agenda com filtro por dia, criação de consultas e transições de status.
 - Atendimentos finalizados e perfil com nome, profissão, registro, especialidade e e-mail.
@@ -53,10 +54,11 @@ Todos os novos endpoints exigem JWT e perfil profissional ativo no banco:
 | Método | Rota | Resultado |
 | --- | --- | --- |
 | GET | `/profissional/me` | Perfil autenticado |
-| GET | `/profissional/dashboard` | Resumo e seis próximos atendimentos |
+| GET | `/profissional/dashboard` | Resumo, atendimentos de hoje e seis próximos atendimentos |
 | GET | `/profissional/pacientes?busca=nome` | Pacientes vinculados e datas resumidas |
 | GET | `/profissional/pacientes/<id>` | Paciente vinculado e consultas com o profissional |
 | GET | `/profissional/consultas?data=AAAA-MM-DD` | Agenda, opcionalmente filtrada por dia |
+| GET | `/profissional/consultas?semana=AAAA-MM-DD` | Consultas da semana de segunda a domingo que contém a data; não combinar com dia ou histórico |
 | GET | `/profissional/consultas?historico=1` | Consultas finalizadas |
 | POST | `/profissional/consultas` | Criação com `paciente_id`, `inicio` ISO 8601 com fuso, `tipo` |
 | PATCH | `/profissional/consultas/<id>/status` | Alteração com `status` |
@@ -121,6 +123,18 @@ python -m http.server 5500 --directory Programacao_front-end
 - Estados finalizados/cancelados não podem ser reabertos neste módulo.
 
 ## Validação
+
+### Visão semanal
+
+A extensão semanal reutiliza as tabelas e permissões existentes, sem migração adicional. Foram aprovados 73 testes de backend e os testes de navegador da agenda diária, da área profissional e dos novos calendários. A cobertura semanal verifica edição entre dias, viradas de mês/ano, ano bissexto, fuso de Brasília, mudanças de status, pacientes vinculados, conteúdo malicioso, erros temporários, nova tentativa e respostas atrasadas. As telas foram verificadas em 1440, 768, 390 e 320 pixels. Esses testes usam APIs simuladas e não alteram dados reais.
+
+As consultas SQL semanais e o novo painel também foram executados no PostgreSQL configurado, em transação somente leitura e com ID zero, sem carregar dados de contas reais. Foram confirmados `tarefas.data` como `date` e `consultas.inicio` como `timestamp with time zone`.
+
+```sh
+python Programacao_back-end/tests/browser_weekly.py
+```
+
+### Implementação inicial
 
 Testes executados neste checkout:
 

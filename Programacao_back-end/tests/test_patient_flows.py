@@ -1,5 +1,6 @@
 """Contratos de tarefas e chat com banco e provedor de IA simulados."""
 import unittest
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import requests
@@ -31,7 +32,7 @@ class PatientFlowsTest(unittest.TestCase):
 
     def test_tasks_and_chat_reject_missing_authentication(self):
         for method, path in [
-            ('GET', '/tarefas'), ('POST', '/tarefas'),
+            ('GET', '/tarefas'), ('GET', '/tarefas/semana'), ('POST', '/tarefas'),
             ('DELETE', '/tarefas/1'), ('PUT', '/tarefas/1'), ('POST', '/tarefas/1/concluir'),
             ('GET', '/tarefas/estatisticas'), ('GET', '/tarefas_protegidas'),
             ('POST', '/chat'),
@@ -49,6 +50,28 @@ class PatientFlowsTest(unittest.TestCase):
             response = self.client.get('/tarefas/estatisticas?date=2026-09-17&usuario_id=99', headers=self.headers)
             self.assertEqual(response.status_code, 200)
             stats.assert_called_once_with(12, '2026-09-17')
+
+    def test_week_is_bounded_to_seven_days_and_authenticated_owner(self):
+        rows = [{'id': 33, 'date': '2028-02-29', 'text': 'Ler', 'time': '09:00', 'deadline': '10:00', 'completed': True}]
+        with patch.object(task_model, 'list_week', return_value=rows) as listing:
+            response = self.client.get('/tarefas/semana?date=2028-03-01&usuario_id=99', headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers['Cache-Control'], 'no-store')
+            listing.assert_called_once_with(12, date(2028, 2, 28), date(2028, 3, 5))
+            self.assertEqual((response.json['start'], response.json['end']), ('2028-02-28', '2028-03-05'))
+            self.assertEqual(len(response.json['days']), 7)
+            self.assertEqual(response.json['days'][1]['tasks'], rows)
+            self.assertEqual(response.json['days'][2]['tasks'], [])
+
+    def test_week_rejects_invalid_or_overflowing_dates_without_query(self):
+        with patch.object(task_model, 'list_week') as listing:
+            for value in ('2026-02-30', '', '2026-1-1', '9999-12-31'):
+                self.assertEqual(self.client.get('/tarefas/semana?date=' + value, headers=self.headers).status_code, 400)
+            listing.assert_not_called()
+        with patch.object(task_model, 'list_week', return_value=[]) as listing:
+            response = self.client.get('/tarefas/semana?date=2027-01-01', headers=self.headers)
+            self.assertEqual(response.json['start'], '2026-12-28')
+            self.assertEqual(response.json['end'], '2027-01-03')
 
     def test_create_task_ignores_patient_identity_in_payload(self):
         payload = {'text': 'Estudar', 'date': '2026-09-17', 'time': '10:00', 'deadline': '11:00', 'usuario_id': 99}

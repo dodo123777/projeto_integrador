@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, request, jsonify
 from models.task import TaskModel
 from auth import auth_required
+from calendar_dates import week_bounds
 
 task_bp = Blueprint('task', __name__)
 task_model = TaskModel()
@@ -109,6 +110,21 @@ def task_stats():
     except ValueError as error:
         return jsonify({'erro': str(error)}), 400
     return jsonify(task_model.get_dashboard_stats(request.user_id, task_date))
+
+
+@task_bp.get('/tarefas/semana')
+@auth_required
+def weekly_tasks():
+    try:
+        start, end = week_bounds(request.args.get('date'))
+    except ValueError as error:
+        return jsonify({'erro': str(error)}), 400
+    tasks = task_model.list_week(request.user_id, start, end)
+    days = [{'date': (start + timedelta(days=offset)).isoformat(), 'tasks': []} for offset in range(7)]
+    by_date = {day['date']: day['tasks'] for day in days}
+    for task in tasks:
+        by_date[task['date']].append(task)
+    return jsonify({'start': start.isoformat(), 'end': end.isoformat(), 'days': days})
 
 
 @task_bp.route('/tarefas/<int:task_id>', methods=['DELETE'])

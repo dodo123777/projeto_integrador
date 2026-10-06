@@ -5,10 +5,11 @@
     const $ = (id) => document.getElementById(id);
     const labels = { agendada: 'Agendada', confirmada: 'Confirmada', em_atendimento: 'Em atendimento', finalizada: 'Finalizada', cancelada: 'Cancelada' };
     const actions = { agendada: [['confirmada', 'Confirmar'], ['cancelada', 'Cancelar']], confirmada: [['em_atendimento', 'Iniciar'], ['cancelada', 'Cancelar']], em_atendimento: [['finalizada', 'Finalizar']] };
-    const pages = { inicio: ['Início', 'Organize seus próximos passos e acompanhe seus atendimentos.'], pacientes: ['Pacientes', 'Pessoas vinculadas ao seu acompanhamento.'], agenda: ['Agenda / Consultas', 'Consulte sua agenda e organize novos atendimentos.'], atendimentos: ['Atendimentos', 'Histórico das consultas finalizadas por você.'], perfil: ['Perfil profissional', 'Seus dados cadastrados na plataforma.'] };
+    const pages = { inicio: ['Início', 'Seu dia de atendimento, com espaço para cuidar de cada pessoa.'], pacientes: ['Pacientes', 'Pessoas vinculadas ao seu acompanhamento.'], agenda: ['Agenda / Consultas', 'Consulte sua agenda e organize novos atendimentos.'], semana: ['Minha semana', 'Veja os próximos dias e organize um atendimento de cada vez.'], atendimentos: ['Atendimentos', 'Histórico das consultas finalizadas por você.'], perfil: ['Perfil profissional', 'Seus dados cadastrados na plataforma.'] };
     let profile;
     let generation = 0;
     let searchTimer;
+    let weekDate = CalendarDates.today();
     const escape = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const formatDate = (value) => value ? new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }) : '—';
     const empty = (message) => `<div class="empty-state"><i class="fa-regular fa-calendar" aria-hidden="true"></i>${escape(message)}</div>`;
@@ -42,7 +43,7 @@
         if (response.status === 403 && data?.codigo !== 'paciente_nao_vinculado') {
             clearPrivateContent();
             $('accessState').hidden = false;
-            $('accessMessage').textContent = 'Acesso exclusivo a médicos e psicólogos habilitados na plataforma.';
+            $('accessMessage').textContent = 'Este espaço é para psicólogos autorizados pela equipe do InfoHelp.';
             $('retryAccess').hidden = true;
         }
         if (!response.ok) {
@@ -68,6 +69,24 @@
         return `<div class="table-wrap"><table class="professional-table"><thead><tr><th scope="col">Paciente</th><th scope="col">Último atendimento</th><th scope="col">Próximo atendimento</th><th scope="col">Vínculo</th></tr></thead><tbody>${rows.map(row => `<tr><td><button class="btn ghost-btn" data-patient="${row.id}">${escape(row.nome)}</button></td><td>${escape(formatDate(row.ultimo_atendimento))}</td><td>${escape(formatDate(row.proximo_atendimento))}</td><td><span class="status-badge status-confirmada">Vinculado</span></td></tr>`).join('')}</tbody></table></div>`;
     }
 
+    function appointmentCards(rows, editable = false) {
+        return rows.map(row => {
+            const time = new Date(row.inicio).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+            return `<article class="consultation-card"><time class="consultation-time" datetime="${escape(row.inicio)}">${escape(time)}</time><div class="consultation-details"><button type="button" class="btn ghost-btn" data-patient="${row.paciente_id}">${escape(row.paciente)}</button><p>${escape(row.tipo)}</p>${badge(row.status)}${editable ? `<div class="d-flex flex-wrap gap-2 mt-2">${(actions[row.status] || []).map(([status, label]) => `<button type="button" class="btn ghost-btn" data-appointment="${row.id}" data-status="${status}">${label}</button>`).join('')}</div>` : ''}</div></article>`;
+        }).join('');
+    }
+
+    function weeklyAppointments(rows) {
+        const days = CalendarDates.week(weekDate);
+        const today = CalendarDates.today();
+        const range = CalendarDates.label(days[0]) + ' — ' + CalendarDates.label(days[6], { day: '2-digit', month: 'short', year: 'numeric' });
+        return `<section class="card panel professional-week"><div class="panel-heading"><div><h2 class="section-title">Sua semana de atendimentos</h2><p class="helper-text mb-0 mt-2">Horários de Brasília. Abra o nome para ver o paciente.</p></div><a class="btn ghost-btn" href="#agenda">Agendar consulta</a></div><div class="week-navigation"><p class="week-range" id="professionalWeekRange">${escape(range)}</p><div class="week-buttons"><button type="button" class="btn ghost-btn" id="previousProfessionalWeek" aria-label="Semana anterior"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button><button type="button" class="btn ghost-btn" id="currentProfessionalWeek">Esta semana</button><button type="button" class="btn ghost-btn" id="nextProfessionalWeek" aria-label="Próxima semana"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button></div></div><div class="mt-3"><label class="form-label" for="professionalWeekDate">Escolha um dia para abrir a semana</label><input class="form-control" type="date" id="professionalWeekDate" value="${escape(weekDate)}"></div><div class="week-grid">${days.map(day => {
+            const appointments = rows.filter(row => CalendarDates.appointmentDay(row.inicio) === day);
+            const label = CalendarDates.label(day, { weekday: 'long', day: '2-digit', month: '2-digit' });
+            return `<section class="week-day ${day === today ? 'week-day-selected' : ''}" data-date="${day}" aria-label="${escape(label)}"><div class="week-day-heading"><h3>${escape(label)}${day === today ? ' · Hoje' : ''}</h3><small>${appointments.length ? appointments.length + (appointments.length === 1 ? ' consulta' : ' consultas') : ''}</small></div>${appointments.length ? appointmentCards(appointments, true) : '<p class="week-empty">Sem atendimentos marcados.</p>'}</section>`;
+        }).join('')}</div></section>`;
+    }
+
     async function render() {
         if (!profile) return;
         const version = ++generation;
@@ -87,7 +106,11 @@
             if (page === 'inicio') {
                 const data = await api('/dashboard');
                 const metrics = [['hoje', 'Consultas de hoje'], ['proximos', 'Próximos atendimentos'], ['pacientes', 'Pacientes vinculados'], ['realizados', 'Atendimentos realizados']];
-                html = `<div class="metric-grid">${metrics.map(([key, label], i) => `<article class="card metric-card ${i === 0 ? 'highlight' : ''}"><span>${label}</span><strong>${escape(data.resumo[key])}</strong></article>`).join('')}</div><section class="card panel"><div class="panel-heading"><h2 class="section-title">Próximos atendimentos</h2><a class="btn ghost-btn" href="#agenda">Ver agenda</a></div>${appointmentsTable(data.proximos)}</section>`;
+                html = `<div class="professional-today"><section class="card panel"><div class="panel-heading"><div><h2 class="section-title">Atendimentos de hoje</h2><p class="helper-text mt-2 mb-0">${escape(CalendarDates.label(CalendarDates.today(), { weekday: 'long', day: '2-digit', month: 'long' }))}</p></div></div>${data.hoje?.length ? appointmentCards(data.hoje) : empty('Nenhum atendimento marcado para hoje.')}</section><section class="card panel professional-week-shortcut"><h2 class="section-title">Minha semana</h2><p class="mt-2">Um olhar para os próximos dias ajuda a preparar cada encontro.</p><a href="#semana" class="btn ghost-btn">Ver atendimentos da semana</a></section></div><div class="metric-grid">${metrics.map(([key, label], i) => `<article class="card metric-card ${i === 0 ? 'highlight' : ''}"><span>${label}</span><strong>${escape(data.resumo[key])}</strong></article>`).join('')}</div><section class="card panel"><div class="panel-heading"><h2 class="section-title">Próximos atendimentos</h2><a class="btn ghost-btn" href="#agenda">Ver agenda</a></div>${appointmentsTable(data.proximos)}</section>`;
+            } else if (page === 'semana') {
+                const rows = await api('/consultas?semana=' + encodeURIComponent(weekDate));
+                if (!Array.isArray(rows)) throw new Error('Não foi possível ler a semana. Tente novamente.');
+                html = weeklyAppointments(rows);
             } else if (page === 'pacientes') {
                 const rows = await api('/pacientes');
                 html = `<section class="card panel"><div class="filter-bar"><div><label for="patientSearch" class="form-label">Buscar por nome</label><input id="patientSearch" class="form-control" type="search" maxlength="120" placeholder="Nome do paciente" autocomplete="off"></div></div><div id="patientsResult">${patientsTable(rows)}</div></section>`;
@@ -100,7 +123,10 @@
             }
             if (version === generation) $('pageContent').innerHTML = html;
         } catch (error) {
-            if (version === generation) { $('pageContent').replaceChildren(); feedback(error.message, true); }
+            if (version === generation) {
+                $('pageContent').innerHTML = profile ? '<button type="button" id="retryProfessionalPage" class="btn ghost-btn">Tentar carregar novamente</button>' : '';
+                feedback(error.message, true);
+            }
         } finally {
             if (version === generation) $('pageContent').setAttribute('aria-busy', 'false');
         }
@@ -143,6 +169,12 @@
         feedback();
         try {
             if (button.dataset.patient) return await showPatient(button.dataset.patient);
+            if (button.id === 'retryProfessionalPage') return await render();
+            if (['previousProfessionalWeek', 'nextProfessionalWeek', 'currentProfessionalWeek'].includes(button.id)) {
+                weekDate = button.id === 'currentProfessionalWeek' ? CalendarDates.today()
+                    : CalendarDates.add(weekDate, button.id === 'previousProfessionalWeek' ? -7 : 7);
+                return await render();
+            }
             if (button.id === 'newAppointment') return await showAppointmentForm();
             if (button.id === 'cancelNew') { $('appointmentFormContainer').hidden = true; return; }
             if (button.id === 'clearDate') { $('appointmentDate').value = ''; return await filterAppointments(); }
@@ -150,7 +182,8 @@
                 if (button.dataset.status === 'cancelada' && !window.confirm('Cancelar esta consulta?')) return;
                 button.disabled = true;
                 await api(`/consultas/${button.dataset.appointment}/status`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.status }) });
-                await filterAppointments();
+                if ($('appointmentDate')) await filterAppointments();
+                else await render();
                 feedback('Status atualizado.');
             }
         } catch (error) { feedback(error.message, true); }
@@ -172,6 +205,12 @@
     });
 
     let searchVersion = 0;
+    $('pageContent').addEventListener('change', event => {
+        if (event.target.id === 'professionalWeekDate' && event.target.value) {
+            weekDate = event.target.value;
+            render();
+        }
+    });
     $('pageContent').addEventListener('input', event => {
         if (event.target.id !== 'patientSearch') return;
         const value = event.target.value;
