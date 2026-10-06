@@ -56,6 +56,7 @@ Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_task_re
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_clinics.py
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_professional.py
 Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_admin.py
+Programacao_back-end/.venv/bin/python Programacao_back-end/tests/browser_auth.py
 ```
 
 `PLAYWRIGHT_EXECUTABLE_PATH` permite selecionar um Chromium de testes existente. `BROWSER_ASSETS_DIR` pode apontar para arquivos de CDN em cache nos testes de clínicas e resiliência. Os testes simulados não alteram o banco remoto.

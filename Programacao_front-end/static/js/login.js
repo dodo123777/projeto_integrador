@@ -1,68 +1,110 @@
 class LoginManager {
     constructor() {
-        this.init();
-    }
-
-
-    init() {
-        // Elementos dos formulários
         this.loginForm = document.getElementById('loginForm');
         this.registerForm = document.getElementById('registerForm');
         this.resetForm = document.getElementById('resetForm');
-
-        // Elementos de erro
         this.erroLogin = document.getElementById('erroLogin');
         this.erroRegistro = document.getElementById('erroRegistro');
         this.erroReset = document.getElementById('erroReset');
+        this.loginNotice = document.getElementById('loginNotice');
         this.retrySessionButton = document.getElementById('retrySessionButton');
-        this.retrySessionButton.addEventListener('click', () => this.checkAlreadyLoggedIn());
-
-        // Adicionar event listeners
+        this.navigationButtons = [
+            'openRegisterBtn', 'closeRegisterBtn', 'openResetBtn',
+            'closeResetBtn', 'backToLoginBtn', 'retrySessionButton'
+        ].map(id => document.getElementById(id));
         this.addEventListeners();
-        
-        // Verificar se já está logado
         this.checkAlreadyLoggedIn();
     }
 
     addEventListeners() {
-        // Botões principais
-        document.getElementById('loginBtn').addEventListener('click', () => this.fazerLogin());
-        document.getElementById('registerBtn').addEventListener('click', () => this.fazerRegistro());
-
-        // Botões de navegação
+        this.loginForm.addEventListener('submit', event => {
+            event.preventDefault();
+            this.fazerLogin();
+        });
+        this.registerForm.addEventListener('submit', event => {
+            event.preventDefault();
+            this.fazerRegistro();
+        });
         document.getElementById('openRegisterBtn').addEventListener('click', () => this.abrirRegistro());
         document.getElementById('closeRegisterBtn').addEventListener('click', () => this.fecharRegistro());
         document.getElementById('openResetBtn').addEventListener('click', () => this.abrirReset());
         document.getElementById('closeResetBtn').addEventListener('click', () => this.fecharReset());
+        document.getElementById('backToLoginBtn').addEventListener('click', () => this.fecharReset());
+        this.retrySessionButton.addEventListener('click', () => this.checkAlreadyLoggedIn());
 
-        // Enter para fazer login
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" && !this.loginForm.classList.contains('d-none')) {
-                this.fazerLogin();
-            }
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById(button.dataset.passwordTarget);
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                button.setAttribute('aria-pressed', String(show));
+                button.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+                button.querySelector('i').className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+            });
         });
+        document.querySelectorAll('.password-field input').forEach(input => {
+            const hint = input.closest('.field-group').querySelector('.caps-lock-hint');
+            input.addEventListener('keyup', event => {
+                hint.hidden = !event.getModifierState('CapsLock');
+            });
+            input.addEventListener('blur', () => { hint.hidden = true; });
+        });
+        [this.loginForm, this.registerForm].forEach(form => {
+            form.addEventListener('input', event => {
+                event.target.removeAttribute('aria-invalid');
+                if (!this.busy && (form !== this.loginForm || this.retrySessionButton.hidden)) {
+                    form.querySelector('.erro').textContent = '';
+                }
+            });
+        });
+    }
+
+    setBusy(button, busy, label) {
+        this.busy = busy;
+        if (busy) {
+            button.dataset.idleLabel = button.textContent;
+            button.textContent = label;
+        } else {
+            button.textContent = button.dataset.idleLabel || button.textContent;
+        }
+        button.disabled = busy;
+        button.closest('form').setAttribute('aria-busy', String(busy));
+        this.navigationButtons.forEach(item => { item.disabled = busy; });
+    }
+
+    showMessage(element, message, tone = 'error') {
+        element.dataset.tone = tone;
+        element.textContent = message;
+    }
+
+    showError(element, message, inputId) {
+        this.showMessage(element, message);
+        if (inputId) {
+            const input = document.getElementById(inputId);
+            input.setAttribute('aria-invalid', 'true');
+            input.focus();
+        }
     }
 
     async checkAlreadyLoggedIn() {
         const token = localStorage.getItem('token');
-        if (!token || this.verifyingSession) return;
-        this.verifyingSession = true;
+        if (!token || this.busy) return;
+        const button = document.getElementById('loginBtn');
         this.retrySessionButton.hidden = true;
-        document.getElementById('loginBtn').disabled = true;
-        this.erroLogin.textContent = 'Verificando sua sessão…';
+        this.setBusy(button, true, 'Verificando sessão…');
+        this.showMessage(this.erroLogin, 'Verificando sua sessão…', 'info');
         try {
             window.location.href = await this.destination(token);
         } catch (error) {
             if (error.status === 401) {
                 localStorage.removeItem('token');
-                this.erroLogin.textContent = 'Sua sessão expirou. Entre novamente.';
+                this.showError(this.erroLogin, 'Sua sessão expirou. Entre novamente.');
             } else {
-                this.erroLogin.textContent = error.message + ' Sua sessão foi mantida.';
+                this.showError(this.erroLogin, error.message + ' Sua sessão foi mantida.');
                 this.retrySessionButton.hidden = false;
             }
         } finally {
-            this.verifyingSession = false;
-            document.getElementById('loginBtn').disabled = false;
+            this.setBusy(button, false);
         }
     }
 
@@ -74,152 +116,145 @@ class LoginManager {
         return allowed.includes(data.destino) ? data.destino : 'index.html';
     }
 
-    // Navegação entre formulários
-    abrirRegistro() {
-        this.registerForm.classList.remove('d-none');
-        this.loginForm.classList.add('d-none');
+    showPanel(panel, titleId) {
+        if (this.busy) return;
+        [this.loginForm, this.registerForm, this.resetForm].forEach(item => {
+            item.classList.toggle('d-none', item !== panel);
+        });
+        document.body.classList.toggle('auth-secondary-view', panel !== this.loginForm);
         this.limparErros();
+        this.loginNotice.hidden = true;
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            document.getElementById(button.dataset.passwordTarget).type = 'password';
+            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', 'Mostrar senha');
+            button.querySelector('i').className = 'fa-regular fa-eye';
+        });
+        document.querySelectorAll('.caps-lock-hint').forEach(hint => { hint.hidden = true; });
+        document.getElementById(titleId).focus();
+        const titles = {
+            loginTitle: 'Entrar - InfoHelp',
+            registerTitle: 'Criar conta - InfoHelp',
+            resetTitle: 'Recuperar acesso - InfoHelp'
+        };
+        document.title = titles[titleId];
     }
 
+    abrirRegistro() { this.showPanel(this.registerForm, 'registerTitle'); }
     fecharRegistro() {
-        this.registerForm.classList.add('d-none');
-        this.loginForm.classList.remove('d-none');
-        this.limparErros();
-        this.limparCamposRegistro();
+        if (this.busy) return;
+        this.showPanel(this.loginForm, 'loginTitle');
+        this.registerForm.reset();
     }
-
-    abrirReset() {
-        this.resetForm.classList.remove('d-none');
-        this.loginForm.classList.add('d-none');
-        this.limparErros();
-    }
-
-    fecharReset() {
-        this.resetForm.classList.add('d-none');
-        this.loginForm.classList.remove('d-none');
-        this.limparErros();
-    }
+    abrirReset() { this.showPanel(this.resetForm, 'resetTitle'); }
+    fecharReset() { this.showPanel(this.loginForm, 'loginTitle'); }
 
     limparErros() {
-        this.erroLogin.innerText = "";
-        this.erroRegistro.innerText = "";
-        this.erroReset.innerText = "";
+        [this.erroLogin, this.erroRegistro, this.erroReset].forEach(item => {
+            item.textContent = '';
+            delete item.dataset.tone;
+        });
+        document.querySelectorAll('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
     }
 
-    limparCamposRegistro() {
-        document.getElementById('regNome').value = '';
-        document.getElementById('regEmail').value = '';
-        document.getElementById('regSenha').value = '';
-    }
+    validarEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 
-
-    // Validações
-    validarEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    validarSenha(senha) {
-        return senha.length >= 6;
-    }
-
-    // Operações de API
     async fazerLogin() {
+        if (this.busy) return;
         const button = document.getElementById('loginBtn');
-        if (button.disabled) return;
         const email = document.getElementById('loginEmail').value.trim();
         const senha = document.getElementById('loginSenha').value;
-
-        // Validações básicas
+        this.limparErros();
         if (!email || !senha) {
-            this.erroLogin.innerText = "Preencha todos os campos!";
+            this.showError(this.erroLogin, 'Informe seu e-mail e sua senha para entrar.', !email ? 'loginEmail' : 'loginSenha');
             return;
         }
-
         if (!this.validarEmail(email)) {
-            this.erroLogin.innerText = "Email inválido!";
+            this.showError(this.erroLogin, 'Confira o e-mail. Exemplo: voce@exemplo.com.', 'loginEmail');
             return;
         }
-
-        button.disabled = true;
+        this.loginNotice.hidden = true;
+        this.setBusy(button, true, 'Entrando…');
         try {
             const data = await apiRequest('/login', {
-                authenticated: false,
-                method: 'POST',
+                authenticated: false, method: 'POST',
                 body: JSON.stringify({ email, senha })
             });
             if (typeof data.token === 'string' && data.token) {
-                // já guardar com prefixo Bearer para facilitar uso nas outras requisições
-                const bearerToken = data.token.startsWith('Bearer ')
-                    ? data.token
-                    : `Bearer ${data.token}`;
+                const bearerToken = data.token.startsWith('Bearer ') ? data.token : 'Bearer ' + data.token;
                 localStorage.setItem('token', bearerToken);
                 const allowed = ['index.html', 'profissional.html', 'admin.html'];
-                window.location.href = allowed.includes(data.destino)
-                    ? data.destino : await this.destination(bearerToken);
+                window.location.href = allowed.includes(data.destino) ? data.destino : await this.destination(bearerToken);
             } else {
-                this.erroLogin.innerText = data.erro || 'Erro no login';
+                this.showError(this.erroLogin, data.erro || 'Não foi possível entrar. Tente novamente.');
             }
         } catch (error) {
-            this.erroLogin.innerText = error.message;
+            const message = error.status === 401
+                ? 'Não conseguimos entrar com esse e-mail e senha. Confira os dados e tente de novo.'
+                : error.message;
+            this.showError(this.erroLogin, message);
             if (localStorage.getItem('token') && error.status !== 401) {
                 this.retrySessionButton.hidden = false;
             }
         } finally {
-            button.disabled = false;
+            this.setBusy(button, false);
         }
     }
 
     async fazerRegistro() {
+        if (this.busy) return;
         const button = document.getElementById('registerBtn');
-        if (button.disabled) return;
         const nome = document.getElementById('regNome').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const senha = document.getElementById('regSenha').value;
-
-        // Validações
+        this.limparErros();
         if (!nome || !email || !senha) {
-            this.erroRegistro.innerText = "Preencha todos os campos!";
+            const field = !nome ? 'regNome' : !email ? 'regEmail' : 'regSenha';
+            this.showError(this.erroRegistro, 'Preencha seu nome, e-mail e senha para criar a conta.', field);
             return;
         }
-
         if (!this.validarEmail(email)) {
-            this.erroRegistro.innerText = "Email inválido!";
+            this.showError(this.erroRegistro, 'Confira o e-mail. Exemplo: voce@exemplo.com.', 'regEmail');
             return;
         }
-
-        if (!this.validarSenha(senha)) {
-            this.erroRegistro.innerText = "A senha deve ter pelo menos 6 caracteres!";
+        if (senha.length < 6) {
+            this.showError(this.erroRegistro, 'Use uma senha com pelo menos 6 caracteres.', 'regSenha');
             return;
         }
-
-        button.disabled = true;
+        if (new TextEncoder().encode(senha).length > 72) {
+            this.showError(this.erroRegistro, 'Sua senha está longa demais. Use uma senha mais curta.', 'regSenha');
+            return;
+        }
+        this.setBusy(button, true, 'Criando conta…');
+        let registered = false;
         try {
             const data = await apiRequest('/registrar', {
-                authenticated: false,
-                method: 'POST',
+                authenticated: false, method: 'POST',
                 body: JSON.stringify({ nome, email, senha })
             });
             if (data.msg) {
-                // sucesso
-                alert(data.msg + " Agora faça login.");
-                this.fecharRegistro();
-                document.getElementById('loginEmail').value = email;
+                registered = true;
             } else {
-                // erro vindo do back-end (ex.: "E-mail já cadastrado!")
-                this.erroRegistro.innerText = data.erro || data.msg || 'Erro ao registrar';
+                this.showError(this.erroRegistro, data.erro || 'Não foi possível criar a conta. Tente novamente.');
             }
         } catch (error) {
-            this.erroRegistro.innerText = error.message;
+            const message = error.status === 409
+                ? 'Esse e-mail já tem uma conta. Volte ao login para entrar.'
+                : error.message;
+            this.showError(this.erroRegistro, message);
         } finally {
-            button.disabled = false;
+            this.setBusy(button, false);
+        }
+        if (registered) {
+            this.fecharRegistro();
+            document.getElementById('loginEmail').value = email;
+            document.getElementById('loginSenha').value = '';
+            const firstName = nome.split(/\s+/)[0];
+            this.loginNotice.textContent = 'Conta criada, ' + firstName + '! Agora é só entrar com seu e-mail e sua senha.';
+            this.loginNotice.hidden = false;
+            document.getElementById('loginSenha').focus();
         }
     }
-
-
 }
 
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    new LoginManager();
-});
+document.addEventListener('DOMContentLoaded', () => { new LoginManager(); });

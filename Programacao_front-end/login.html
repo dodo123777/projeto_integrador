@@ -2,48 +2,76 @@
 <html lang="pt-br">
     <head>
         <meta charset="UTF-8">
-        <title>Login - InfoHelp</title>
+        <title>Entrar - InfoHelp</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+        <meta name="theme-color" content="#f7f9fc">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
         <link rel="stylesheet" href="./static/css/login.css">
     </head>
-    <body class="d-flex justify-content-center align-items-center min-vh-100 px-3 py-4">
-        <!-- LOGIN FORM -->
-        <div class="auth-card card align-items-center gap-3 border-0" id="loginForm">
-            <img class="logo img-fluid d-block" src="./static/images/unisal-removebg-preview.png" alt="Logo UNISAL">
-            <div class="app-title text-center fw-bold">InfoHelp</div>
-            <div class="subtitle text-center fw-medium mb-2">Agenda Organizadora de Tarefas</div>
-            <input class="form-control" type="email" id="loginEmail" placeholder="E-mail" required autocomplete="username">
-            <input class="form-control" type="password" id="loginSenha" placeholder="Senha" required autocomplete="current-password">
-            <button class="btn btn-primary w-100 fw-bold" id="loginBtn">Entrar</button>
-            <button type="button" class="btn btn-link w-100 fw-semibold p-0 mt-1" id="openRegisterBtn">Registrar-se</button>
-            <button type="button" class="btn btn-link w-100 fw-semibold p-0 mt-1" id="openResetBtn">Esqueci minha senha</button>
-            <p class="erro m-0 text-center" id="erroLogin"></p>
-            <button type="button" class="btn btn-link w-100 fw-semibold" id="retrySessionButton" hidden>Verificar minha sessão novamente</button>
-        </div>
-
-        <!-- REGISTRO FORM (inicia oculto) -->
-        <div class="auth-card card align-items-center gap-3 border-0 d-none" id="registerForm">
-            <button class="btn close-x position-absolute start-50 translate-middle-x w-auto p-0 m-0 fw-bold" aria-label="Voltar ao login" id="closeRegisterBtn">&times;</button>
-            <img class="logo img-fluid d-block" src="./static/images/unisal-removebg-preview.png" alt="Logo UNISAL">
-            <div class="app-title text-center fw-bold">Registrar novo usuário</div>
-            <input class="form-control" type="text" id="regNome" placeholder="Nome completo" required>
-            <input class="form-control" type="email" id="regEmail" placeholder="E-mail" required>
-            <input class="form-control" type="password" id="regSenha" placeholder="Senha" required>
-            <button class="btn btn-primary w-100 fw-bold" id="registerBtn">Registrar</button>
-            <p class="erro m-0 text-center" id="erroRegistro"></p>
-        </div>
-
-        <!-- RESET FORM (inicia oculto) -->
-        <div class="auth-card card align-items-center gap-3 border-0 d-none" id="resetForm">
-            <button class="btn close-x position-absolute start-50 translate-middle-x w-auto p-0 m-0 fw-bold" aria-label="Voltar ao login" id="closeResetBtn">&times;</button>
-            <img class="logo img-fluid d-block" src="./static/images/unisal-removebg-preview.png" alt="Logo UNISAL">
-            <div class="app-title text-center fw-bold">Recuperar acesso</div>
-            <p class="text-center">A recuperação de senha está temporariamente indisponível. Entre em contato com o suporte da plataforma.</p>
-            <p class="erro m-0 text-center" id="erroReset"></p>
-        </div>
-
+    <body class="auth-page">
+        <header class="auth-header">
+            <div class="brand"><span class="brand-name">InfoHelp</span><span class="brand-description">Agenda e cuidado</span></div>
+            <img class="logo" src="./static/images/unisal-removebg-preview.png" alt="UNISAL" width="140">
+        </header>
+        <main class="auth-layout">
+            <section class="auth-intro" aria-labelledby="introTitle">
+                <p class="intro-kicker">Um pouco de cada vez.</p>
+                <h1 id="introTitle">Vamos por<br> <span>partes?</span></h1>
+                <p class="intro-description">Deixe os próximos passos na agenda e escolha o que cabe no seu dia.</p>
+                <aside class="first-step" aria-label="Exemplo de um pequeno passo">
+                    <p class="first-step-label">Pode ser simples assim</p>
+                    <p class="first-step-example">“Ler uma página.”</p>
+                    <p class="first-step-caption">Você escolhe o tamanho do primeiro passo.</p>
+                </aside>
+            </section>
+            <section class="auth-card" aria-label="Acesso ao InfoHelp">
+                <form id="loginForm" class="auth-panel" novalidate aria-labelledby="loginTitle">
+                    <div class="panel-heading"><span class="panel-eyebrow">Entre no InfoHelp</span><h2 id="loginTitle" tabindex="-1">Que bom ter você aqui.</h2><p>Entre para ver o que você planejou para hoje.</p></div>
+                    <p id="loginNotice" class="auth-message success-message" role="status" hidden></p>
+                    <div class="field-group">
+                        <label for="loginEmail">E-mail</label>
+                        <input class="form-control" type="email" id="loginEmail" name="email" placeholder="voce@exemplo.com" required autocomplete="username" maxlength="254" autocapitalize="none" spellcheck="false" aria-describedby="erroLogin">
+                    </div>
+                    <div class="field-group">
+                        <div class="field-heading"><label for="loginSenha">Senha</label><button type="button" class="text-button forgot-button" id="openResetBtn">Esqueci minha senha</button></div>
+                        <div class="password-field">
+                            <input class="form-control" type="password" id="loginSenha" name="senha" placeholder="Digite sua senha" required autocomplete="current-password" aria-describedby="erroLogin">
+                            <button type="button" class="password-toggle" data-password-target="loginSenha" aria-label="Mostrar senha" aria-controls="loginSenha" aria-pressed="false"><i class="fa-regular fa-eye" aria-hidden="true"></i></button>
+                        </div>
+                        <p class="field-hint caps-lock-hint" hidden>Caps Lock está ativado.</p>
+                    </div>
+                    <p class="auth-message erro" id="erroLogin" role="alert"></p>
+                    <button type="button" class="text-button retry-button" id="retrySessionButton" hidden>Verificar minha sessão novamente</button>
+                    <button type="submit" class="auth-primary" id="loginBtn">Entrar</button>
+                    <div class="signup-section"><p>Primeira vez aqui?</p><button type="button" class="auth-secondary" id="openRegisterBtn">Criar minha conta</button></div>
+                </form>
+                <form id="registerForm" class="auth-panel d-none" novalidate aria-labelledby="registerTitle">
+                    <button type="button" class="back-button" id="closeRegisterBtn"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao login</button>
+                    <div class="panel-heading"><span class="panel-eyebrow">Criar uma conta</span><h2 id="registerTitle" tabindex="-1">Um espaço para você.</h2><p>Só precisamos do seu nome, e-mail e uma senha.</p></div>
+                    <div class="field-group"><label for="regNome">Como podemos chamar você?</label><input class="form-control" type="text" id="regNome" name="nome" placeholder="Seu nome" required autocomplete="name" maxlength="120" aria-describedby="erroRegistro"></div>
+                    <div class="field-group"><label for="regEmail">E-mail</label><input class="form-control" type="email" id="regEmail" name="email" placeholder="voce@exemplo.com" required autocomplete="email" maxlength="254" autocapitalize="none" spellcheck="false" aria-describedby="erroRegistro"></div>
+                    <div class="field-group">
+                        <label for="regSenha">Crie uma senha</label>
+                        <div class="password-field"><input class="form-control" type="password" id="regSenha" name="senha" placeholder="Pelo menos 6 caracteres" required autocomplete="new-password" minlength="6" aria-describedby="registerPasswordHint erroRegistro"><button type="button" class="password-toggle" data-password-target="regSenha" aria-label="Mostrar senha" aria-controls="regSenha" aria-pressed="false"><i class="fa-regular fa-eye" aria-hidden="true"></i></button></div>
+                        <p class="field-hint" id="registerPasswordHint">Use pelo menos 6 caracteres. Prefira uma senha que você não usa em outros sites.</p>
+                        <p class="field-hint caps-lock-hint" hidden>Caps Lock está ativado.</p>
+                    </div>
+                    <p class="auth-message erro" id="erroRegistro" role="alert"></p>
+                    <button type="submit" class="auth-primary" id="registerBtn">Criar conta</button>
+                </form>
+                <section id="resetForm" class="auth-panel d-none" aria-labelledby="resetTitle">
+                    <button type="button" class="back-button" id="closeResetBtn"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao login</button>
+                    <div class="panel-heading"><span class="panel-eyebrow">Recuperar acesso</span><h2 id="resetTitle" tabindex="-1">Esqueceu a senha?</h2><p>Veja como pedir ajuda para entrar de novo.</p></div>
+                    <div class="recovery-notice"><span class="recovery-icon"><i class="fa-solid fa-key" aria-hidden="true"></i></span><h3>Por enquanto, fale com a equipe.</h3><p>A recuperação de senha está temporariamente indisponível. Você pode pedir ajuda ao responsável pelo InfoHelp.</p></div>
+                    <p class="recovery-guidance">Diga qual e-mail você usou no cadastro. Assim, a equipe consegue localizar sua conta.</p>
+                    <p class="auth-message erro" id="erroReset" role="alert"></p>
+                    <button type="button" class="auth-primary" id="backToLoginBtn">Voltar para entrar</button>
+                </section>
+            </section>
+        </main>
+        <footer class="auth-footer">Não precisa caber tudo hoje.</footer>
         <script src="./static/js/api.js"></script>
         <script src="./static/js/login.js"></script>
     </body>
